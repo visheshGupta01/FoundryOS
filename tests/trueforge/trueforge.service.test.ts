@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { TrueForgeService } from "../../src/modules/trueforge/trueforge.service.js";
-import { ValidationError, InfrastructureError } from "../../src/errors/base.error.js";
-import { ErrorCode } from "../../src/errors/error-codes.js";
+import { TrueForgeService } from "../../src/trueforge/trueforge.service.js";
+import { ValidationError, InfrastructureError } from "../../src/backend/errors/base.error.js";
+import { ErrorCode } from "../../src/backend/errors/error-codes.js";
 import type { TrueForge } from "@truefoundry/trueforge-sdk";
 
 describe("TrueForgeService", () => {
@@ -53,7 +53,7 @@ describe("TrueForgeService", () => {
     try {
       await service.createSession({
         tenantId: "tenant-alpha",
-        agentName: "researcher"
+        agentName: "researcher",
       });
       expect.fail("Expected createSession to throw");
     } catch (error) {

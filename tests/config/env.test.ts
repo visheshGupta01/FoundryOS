@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseEnv } from "../../src/config/env.js";
-import { ConfigurationError } from "../../src/errors/base.error.js";
+import { parseEnv } from "../../src/backend/config/env.js";
+import { ConfigurationError } from "../../src/backend/errors/base.error.js";
 
 describe("Environment Configuration", () => {
   it("should parse default environment values correctly", () => {

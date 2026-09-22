@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { withRetry, calculateBackoffWithJitter } from "../../src/shared/retry.js";
+import { withRetry, calculateBackoffWithJitter } from "../../src/backend/shared/retry.js";
 
 describe("Resilient Retry Mechanism", () => {
   it("should calculate backoff with jitter within bounded range", () => {

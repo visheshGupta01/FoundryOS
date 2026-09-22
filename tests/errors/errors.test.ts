@@ -6,8 +6,8 @@ import {
   DomainError,
   InfrastructureError,
   RateLimitError
-} from "../../src/errors/base.error.js";
-import { ErrorCode } from "../../src/errors/error-codes.js";
+} from "../../src/backend/errors/base.error.js";
+import { ErrorCode } from "../../src/backend/errors/error-codes.js";
 
 describe("Typed Error Hierarchy", () => {
   it("should construct ValidationError with 400 status and VALIDATION_ERROR code", () => {
