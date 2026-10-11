@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Icons } from '../common/Icons';
-
+import { logout } from '../../services/auth.service';
 export const Header: React.FC = () => {
   const {
     activeView,
@@ -110,6 +110,18 @@ export const Header: React.FC = () => {
           <Icons.Plus size={15} />
           <span>New Session</span>
         </button>
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            logout();
+            window.location.reload();
+          }}
+          style={styles.logoutBtn}
+          title="Logout"
+        >
+          <span>Logout</span>
+        </button>
+
       </div>
     </header>
   );
@@ -226,6 +238,19 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'all var(--transition-fast)'
   },
+  logoutBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    background: 'transparent',
+    border: '1px solid var(--glass-border-subtle)',
+    borderRadius: 'var(--radius-xs)',
+    color: 'var(--text-secondary)',
+    fontSize: '0.76rem',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
   profileSwitcher: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -245,4 +270,5 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontFamily: 'inherit'
   }
+
 };

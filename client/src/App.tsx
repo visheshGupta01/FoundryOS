@@ -16,6 +16,8 @@ import { ArtifactModal } from './components/modals/ArtifactModal';
 import { OnboardingModal } from './components/modals/OnboardingModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
 const AppContent: React.FC = () => {
   const { activeView } = useApp();
 
@@ -66,7 +68,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <AppContent />
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+
       </AppProvider>
     </ErrorBoundary>
   );
