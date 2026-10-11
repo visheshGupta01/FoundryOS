@@ -24,25 +24,55 @@ describe("ContextInspector & Token Budget Debugger", () => {
         productName: "Foundry Platform",
         category: "SaaS",
         problemStatement: "Startups lack dedicated marketing teams.",
-        features: ["7-layer brain", "Multi-agent flows", "Competitor tracker"]
+        features: ["7-layer brain", "Multi-agent flows", "Competitor tracker"],
+        benefits: ["Eliminates need for a marketing team", "Persistent brand context"],
+        useCases: ["Startup GTM launch", "Founder-led content marketing"],
+        pricingDetails: {},
+        uniqueFeatures: ["7-layer persistent memory", "Multi-agent orchestration"],
+        limitations: []
       }
     ]);
 
     vi.spyOn(repo, "getIcp").mockResolvedValue({
       tenantId,
       customerType: "Early-stage Founders",
-      painPoints: ["Tool fatigue", "Context loss", "Inconsistent branding"]
+      painPoints: ["Tool fatigue", "Context loss", "Inconsistent branding"],
+      jobRoles: ["Technical Founder", "Solo CEO"],
+      needs: ["Automated marketing", "Consistent brand voice"],
+      goals: ["500 beta users", "40% weekly retention"],
+      objections: ["Too early for AI marketing", "Already using generic tools"],
+      buyingTriggers: ["Hiring freeze", "Failed agency engagement"],
+      decisionCriteria: ["Ease of setup", "Context persistence", "Pricing"]
     });
 
     vi.spyOn(repo, "getPersonas").mockResolvedValue([
-      { id: "pers-1", tenantId, name: "Vikram", role: "Solo Technical Founder" }
+      {
+        id: "pers-1",
+        tenantId,
+        name: "Vikram",
+        role: "Solo Technical Founder",
+        painPoints: [],
+        goals: [],
+        objections: []
+      }
     ]);
 
     vi.spyOn(repo, "getBrandProfile").mockResolvedValue({
       tenantId,
+      brandName: "FoundryOS",
       brandPositioning: "Persistent context over generic prompting.",
+      values: [],
+      personality: [],
+      differentiators: [],
       tonePositive: ["clear", "confident", "human"],
-      toneAvoid: ["buzzwords", "overhype"]
+      toneAvoid: ["buzzwords", "overhype"],
+      secondaryMessages: [],
+      taglines: [],
+      keyBenefits: [],
+      proofPoints: [],
+      objectionHandling: {},
+      claims: [],
+      contentRules: []
     });
 
     vi.spyOn(repo, "getCompetitors").mockResolvedValue([
@@ -90,6 +120,9 @@ describe("ContextInspector & Token Budget Debugger", () => {
         statement: "Founders prefer structured reports over generic chat prose.",
         confidenceScore: 0.9,
         confidenceLevel: "HIGH",
+        evidenceCount: 1,
+        evidence: [],
+        sourcePriority: 5,
         status: "validated",
         isCurrent: true,
         metadata: {}

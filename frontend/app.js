@@ -85,7 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ],
     artifacts: [],
     archivedDocuments: [],
-    archiveExpanded: false
+    archiveExpanded: false,
+    activeAttachments: []
   };
 
   // 1. Theme Management (Black & White Theme)
@@ -129,6 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "employees-view": "Your AI Marketing Team",
     "brain-view": "Company Knowledge Base",
     "archive-view": "Saved Marketing Reports",
+    "plugins-view": "Model Context Protocol & Plugins",
     "token-analytics-view": "Token Analytics"
   };
 
@@ -154,6 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (targetView === "token-analytics-view") {
         inspectLiveContext();
+      }
+      if (targetView === "plugins-view") {
+        fetchMcpServersAndTools();
       }
     });
   });
@@ -1013,17 +1018,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 2000);
   };
 
-  // 7. Customer Workspace Interactions (File Uploads & Dynamic LLM Routing)
+  // 7. Customer Workspace Interactions (Multi-Uploads, Specific Agent Selection, Credits & MCP)
   const chatInput = document.getElementById("chat-input");
   const sendBtn = document.getElementById("btn-send-message");
   const messagesList = document.getElementById("messages-list");
   const charCount = document.getElementById("prompt-char-count");
   const btnUploadFile = document.getElementById("btn-upload-file");
   const chatFileInput = document.getElementById("chat-file-input");
-  const attachedFileChip = document.getElementById("attached-file-chip");
-  const attachedFileName = document.getElementById("attached-file-name");
-  const attachedFileSize = document.getElementById("attached-file-size");
-  const btnRemoveAttachment = document.getElementById("btn-remove-attachment");
+  const attachedFilesContainer = document.getElementById("attached-files-container");
+  const attachedFilesChips = document.getElementById("attached-files-chips");
+  const attachedFilesCount = document.getElementById("attached-files-count");
+  const btnClearAllAttachments = document.getElementById("btn-clear-all-attachments");
+  const chatAgentSelect = document.getElementById("chat-agent-select");
+  const headerCreditPill = document.getElementById("header-credit-pill");
+  const headerCreditText = document.getElementById("header-credit-text");
 
   function formatFileSize(bytes) {
     if (!bytes || bytes === 0) return "0 KB";
@@ -1033,15 +1041,70 @@ document.addEventListener("DOMContentLoaded", () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   }
 
-  function clearActiveAttachment() {
-    state.activeAttachment = null;
-    if (chatFileInput) chatFileInput.value = "";
-    if (attachedFileChip) attachedFileChip.classList.add("hidden");
+  function renderAttachmentChips() {
+    if (!attachedFilesContainer || !attachedFilesChips || !attachedFilesCount) return;
+    const items = state.activeAttachments || [];
+    attachedFilesCount.textContent = `${items.length} / 5 files attached`;
+
+    if (items.length === 0) {
+      attachedFilesContainer.classList.add("hidden");
+      return;
+    }
+
+    attachedFilesContainer.classList.remove("hidden");
+    attachedFilesChips.innerHTML = items.map((file, idx) => `
+      <div class="attached-file-chip">
+        <span class="file-icon">📎</span>
+        <span class="file-name" title="${escapeHtml(file.fileName)}">${escapeHtml(file.fileName)}</span>
+        <span class="file-size">(${escapeHtml(file.size)})</span>
+        <button class="btn-remove-attachment" data-index="${idx}" type="button" title="Remove attachment">&times;</button>
+      </div>
+    `).join("");
+
+    attachedFilesChips.querySelectorAll(".btn-remove-attachment").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.getAttribute("data-index"), 10);
+        state.activeAttachments.splice(idx, 1);
+        renderAttachmentChips();
+      });
+    });
   }
 
+  function clearActiveAttachments() {
+    state.activeAttachments = [];
+    if (chatFileInput) chatFileInput.value = "";
+    renderAttachmentChips();
+  }
+
+  if (btnClearAllAttachments) {
+    btnClearAllAttachments.addEventListener("click", clearActiveAttachments);
+  }
+
+  // Credit Display and Management
+  async function fetchCreditStatus() {
+    try {
+      const res = await fetch(`/api/credits?tenantId=${encodeURIComponent(state.tenantId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        updateCreditDisplay(data.creditsRemaining, data.dailyLimit);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch credit status", err);
+    }
+  }
+
+  function updateCreditDisplay(remaining, limit = 100) {
+    if (headerCreditText) {
+      headerCreditText.textContent = `${remaining}/${limit} Credits`;
+    }
+    const statCredit = document.getElementById("stat-mcp-daily-credits");
+    if (statCredit) statCredit.textContent = `${remaining}`;
+  }
+
+  fetchCreditStatus();
+
   // Document Archive Management
-  // Stores uploaded docs in a collapsible "Archive" section inside the chat,
-  // so users can reference or delete old uploads without leaving the conversation.
   const archiveDrawer = document.getElementById("chat-archive-drawer");
   const archiveToggle = document.getElementById("archive-toggle-header");
   const archiveItemsList = document.getElementById("archive-items-list");
@@ -1110,31 +1173,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     chatFileInput.addEventListener("change", (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
 
-      const sizeStr = formatFileSize(file.size);
-      const reader = new FileReader();
+      const currentCount = (state.activeAttachments || []).length;
+      if (currentCount + files.length > 5) {
+        alert("Maximum 5 files can be attached at once. Adding as many as fit into the 5-file limit.");
+      }
 
-      reader.onload = (event) => {
-        const content = event.target ? event.target.result : "";
-        state.activeAttachment = {
-          fileName: file.name,
-          content: typeof content === "string" ? content : "",
-          size: sizeStr
+      const availableSlots = Math.max(0, 5 - currentCount);
+      const filesToAdd = files.slice(0, availableSlots);
+
+      filesToAdd.forEach((file) => {
+        const sizeStr = formatFileSize(file.size);
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+          const content = event.target ? event.target.result : "";
+          if (!state.activeAttachments) state.activeAttachments = [];
+          state.activeAttachments.push({
+            fileName: file.name,
+            content: typeof content === "string" ? content : "",
+            size: sizeStr
+          });
+          renderAttachmentChips();
         };
 
-        if (attachedFileName) attachedFileName.textContent = file.name;
-        if (attachedFileSize) attachedFileSize.textContent = `(${sizeStr})`;
-        if (attachedFileChip) attachedFileChip.classList.remove("hidden");
-      };
+        reader.readAsText(file);
+      });
 
-      reader.readAsText(file);
+      chatFileInput.value = "";
     });
-  }
-
-  if (btnRemoveAttachment) {
-    btnRemoveAttachment.addEventListener("click", clearActiveAttachment);
   }
 
   if (chatInput && charCount) {
@@ -1156,7 +1225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sendBtn.addEventListener("click", submitChat);
   }
 
-  function appendMessage(sender, content, isUser = false, avatar = "YOU", attachment = null, extraBadge = "") {
+  function appendMessage(sender, content, isUser = false, avatar = "YOU", attachments = null, extraBadge = "", toolCalls = []) {
     if (!messagesList) return;
 
     const card = document.createElement("div");
@@ -1164,15 +1233,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    const attachmentHtml = attachment
-      ? `
-        <div class="message-attachment-pill">
-          <span>📎</span>
-          <span>${escapeHtml(attachment.fileName)}</span>
-          <span style="opacity: 0.65; font-size: 0.72rem;">(${escapeHtml(attachment.size)})</span>
+    let attachmentsHtml = "";
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      attachmentsHtml = `
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+          ${attachments.map(att => `
+            <div class="message-attachment-pill">
+              <span>📎</span>
+              <span>${escapeHtml(att.fileName)}</span>
+              <span style="opacity: 0.65; font-size: 0.72rem;">(${escapeHtml(att.size || "")})</span>
+            </div>
+          `).join("")}
         </div>
-      `
-      : "";
+      `;
+    } else if (attachments && attachments.fileName) {
+      attachmentsHtml = `
+        <div class="message-attachment-pill" style="margin-top:8px;">
+          <span>📎</span>
+          <span>${escapeHtml(attachments.fileName)}</span>
+          <span style="opacity: 0.65; font-size: 0.72rem;">(${escapeHtml(attachments.size || "")})</span>
+        </div>
+      `;
+    }
+
+    let toolCallsHtml = "";
+    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+      toolCallsHtml = `
+        <div style="margin-top: 10px; padding: 8px 12px; background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.2); border-radius: 6px; font-size: 0.75rem;">
+          <div style="font-weight: 600; color: var(--accent-teal); margin-bottom: 4px;">🛠️ Real-Time MCP Tools Utilized:</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${toolCalls.map(tc => `<span class="mcp-tool-tag">${escapeHtml(tc.toolName)} (${tc.durationMs}ms)</span>`).join("")}
+          </div>
+        </div>
+      `;
+    }
 
     card.innerHTML = `
       <div class="message-header">
@@ -1185,7 +1279,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="message-body">
         ${typeof content === "string" ? formatTextContent(content) : formatHumanFriendlyDocument(sender, content)}
-        ${attachmentHtml}
+        ${attachmentsHtml}
+        ${toolCallsHtml}
       </div>
     `;
 
@@ -1196,30 +1291,51 @@ document.addEventListener("DOMContentLoaded", () => {
   async function submitChat() {
     if (!chatInput) return;
     let task = chatInput.value.trim();
-    const attachment = state.activeAttachment;
+    const attachments = (state.activeAttachments || []).slice(0, 5);
 
-    if (!task && !attachment) return;
+    if (!task && attachments.length === 0) return;
 
-    if (!task && attachment) {
-      task = `Please review the attached document "${attachment.fileName}" and extract strategic marketing intelligence and action items.`;
+    if (!task && attachments.length > 0) {
+      task = `Please review the attached document(s) (${attachments.map(a => a.fileName).join(", ")}) and extract strategic marketing intelligence and action items.`;
     }
 
     chatInput.value = "";
     chatInput.style.height = "auto";
     if (charCount) charCount.textContent = "0 chars";
-    if (attachment) archiveDocument(attachment);
-    clearActiveAttachment();
+    attachments.forEach(a => archiveDocument(a));
+    clearActiveAttachments();
 
-    // Default to 'auto' so the LLM decides the appropriate specialist or assistant
-    await executeAgentRun("auto", task, attachment);
+    const selectedAgent = chatAgentSelect ? chatAgentSelect.value : "auto";
+
+    if (selectedAgent === "multi-agent") {
+      await executeMultiAgentRun(task, attachments);
+    } else {
+      await executeAgentRun(selectedAgent, task, attachments);
+    }
   }
 
-  async function executeAgentRun(employeeId, task, attachedDoc = null) {
+  async function executeMultiAgentRun(task, attachedDocs = []) {
+    appendMessage("Founder", `[Multi-Agent Team Initiative]: ${task}`, true, "FD", attachedDocs);
+
+    const specialists = [
+      { id: "market-research-analyst", name: "Market Research Analyst", avatar: "MR", prompt: `Analyze customer demand and market opportunities regarding: ${task}` },
+      { id: "competitor-analyst", name: "Competitor Intelligence Analyst", avatar: "CI", prompt: `Perform competitive teardown and identify feature/pricing gaps for: ${task}` },
+      { id: "chief-marketing-strategist", name: "Chief Marketing Strategist", avatar: "CS", prompt: `Formulate overarching positioning statement and strategic pillars for: ${task}` }
+    ];
+
+    for (const spec of specialists) {
+      await executeAgentRun(spec.id, spec.prompt, attachedDocs, false);
+    }
+  }
+
+  async function executeAgentRun(employeeId, task, attachedDocs = [], shouldAppendUserMessage = true) {
     const isAuto = !employeeId || employeeId === "auto";
     state.selectedEmployeeId = employeeId;
     const employee = !isAuto ? state.employees.find((e) => e.id === employeeId) : null;
 
-    appendMessage("Founder", task, true, "FD", attachedDoc);
+    if (shouldAppendUserMessage) {
+      appendMessage("Founder", task, true, "FD", attachedDocs);
+    }
 
     const loadingCard = document.createElement("div");
     loadingCard.className = "message-card agent";
@@ -1228,8 +1344,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const initialName = employee ? `${employee.name} (${employee.title})` : "FoundryOS Intelligent Router";
     const initialAvatar = employee ? employee.avatar : "AI";
     const initialDesc = employee
-      ? "Applying Company Brain knowledge • Analyzing market parameters • Writing executive document..."
-      : "Routing to the best marketing specialist • Inspecting Company Brain context • Formulating strategy...";
+      ? "Applying Company Brain knowledge • Invoking MCP tools • Formulating executive deliverables..."
+      : "Routing to best marketing specialist • Inspecting live MCP intelligence • Generating strategic output...";
 
     loadingCard.innerHTML = `
       <div class="message-header">
@@ -1237,7 +1353,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="message-avatar">${initialAvatar}</div>
           <span>${initialName}</span>
         </div>
-        <span class="message-time">Analyzing prompt...</span>
+        <span class="message-time">Executing turn...</span>
       </div>
       <div class="message-body" style="font-style: italic; color: var(--text-tertiary);">
         ${initialDesc}
@@ -1254,7 +1370,9 @@ document.addEventListener("DOMContentLoaded", () => {
           tenantId: state.tenantId,
           ...(employee ? { employeeId: employee.id } : { employeeId: "auto" }),
           task,
-          ...(attachedDoc ? { attachedDocument: { fileName: attachedDoc.fileName, content: attachedDoc.content } } : {})
+          attachedDocuments: attachedDocs.map(d => ({ fileName: d.fileName, content: d.content })),
+          ...(attachedDocs[0] ? { attachedDocument: { fileName: attachedDocs[0].fileName, content: attachedDocs[0].content } } : {}),
+          enableTools: true
         })
       });
 
@@ -1263,7 +1381,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         const data = await res.json();
         const extraBadge = data.routedBy ? `<span class="routed-agent-pill" title="${escapeHtml(data.routingReason || 'Classified by AI Router')}">⚡ AI Routed</span>` : "";
-        appendMessage(data.employeeName, data.output, false, data.avatar || (employee ? employee.avatar : "FOS"), null, extraBadge);
+        appendMessage(data.employeeName, data.output, false, data.avatar || (employee ? employee.avatar : "FOS"), null, extraBadge, data.toolCalls || []);
+
+        if (data.creditUsage) {
+          updateCreditDisplay(data.creditUsage.creditsRemaining, data.creditUsage.dailyLimit);
+        }
 
         // Update token telemetry in the background
         if (data.tokenReport) {
@@ -1287,13 +1409,15 @@ document.addEventListener("DOMContentLoaded", () => {
           output: data.output
         });
         renderArtifacts();
+      } else if (res.status === 429) {
+        appendMessage("System Guardrail", "⚠️ Daily credit limit reached (100/100 credits used). Daily limit resets at midnight UTC (80,000 tokens/day).", false, "SYS");
       } else {
         const errData = await res.json();
         appendMessage(employee ? employee.name : "FoundryOS", `Execution failed: ${errData.error || "Unknown error"}`, false, employee ? employee.avatar : "FOS");
       }
     } catch (err) {
       if (loadingCard) loadingCard.remove();
-      appendMessage(employee ? employee.name : "FoundryOS", `Network failure: ${String(err)}`, false, employee ? employee.avatar : "FOS");
+      appendMessage("FoundryOS", `Encountered communication error: ${String(err)}`, false, "FOS");
     }
   }
 
@@ -1525,6 +1649,433 @@ document.addEventListener("DOMContentLoaded", () => {
   if (clearChatBtn && messagesList) {
     clearChatBtn.addEventListener("click", () => {
       messagesList.innerHTML = "";
+    });
+  }
+
+  // 13. Model Context Protocol (MCP) & Plugins Hub
+  async function fetchMcpServersAndTools() {
+    try {
+      const [serversRes, toolsRes] = await Promise.all([
+        fetch("/api/mcp/servers"),
+        fetch("/api/tools")
+      ]);
+      if (serversRes.ok && toolsRes.ok) {
+        const serversData = await serversRes.json();
+        const toolsData = await toolsRes.json();
+        renderMcpServersGrid(serversData.servers || []);
+
+        const serverCountEl = document.getElementById("stat-mcp-servers-count");
+        const toolCountEl = document.getElementById("stat-mcp-tools-count");
+        const badgeEl = document.getElementById("mcp-servers-count-badge");
+        if (serverCountEl) serverCountEl.textContent = String((serversData.servers || []).length);
+        if (toolCountEl) toolCountEl.textContent = String((toolsData.tools || []).length);
+        if (badgeEl) badgeEl.textContent = `${(serversData.servers || []).length} MCP`;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch MCP servers and tools", err);
+    }
+  }
+
+  function renderMcpServersGrid(servers) {
+    const container = document.getElementById("mcp-servers-grid");
+    if (!container) return;
+
+    if (servers.length === 0) {
+      container.innerHTML = `<div style="color: var(--text-tertiary); font-style: italic; padding: 20px;">No active MCP servers found. Initializing...</div>`;
+      return;
+    }
+
+    container.innerHTML = servers.map(server => `
+      <div class="mcp-card">
+        <div class="mcp-card-header">
+          <div>
+            <div class="mcp-card-title">${escapeHtml(server.name)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); font-family: monospace; margin-top: 2px;">
+              ID: ${escapeHtml(server.id)} • Transport: ${escapeHtml(server.transport)}
+            </div>
+          </div>
+          <span class="debugger-status-tag optimal" style="text-transform: uppercase;">${escapeHtml(server.status)}</span>
+        </div>
+        <div class="mcp-card-desc">${escapeHtml(server.description || 'Model Context Protocol Server')}</div>
+        <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px;">Exposed Tools (${server.toolCount}):</div>
+        <div class="mcp-tools-list">
+          ${(server.tools || []).map(t => `<span class="mcp-tool-tag">${escapeHtml(t)}</span>`).join("")}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  const btnRunToolTest = document.getElementById("btn-run-tool-test");
+  const toolTestSelect = document.getElementById("tool-test-select");
+  const toolTestInput = document.getElementById("tool-test-input");
+  const toolTestResultWrap = document.getElementById("tool-test-result-wrap");
+  const toolTestResult = document.getElementById("tool-test-result");
+  const btnRefreshMcpTools = document.getElementById("btn-refresh-mcp-tools");
+
+  const defaultToolInputs = {
+    keyword_suggester: JSON.stringify({ seedTopic: "AI marketing for startups" }, null, 2),
+    cac_ltv_calculator: JSON.stringify({ arpuMonthly: 99, cac: 280, churnRateMonthly: 0.03 }, null, 2),
+    value_prop_evaluator: JSON.stringify({ statement: "The revolutionary next-gen synergy platform for marketing." }, null, 2),
+    funnel_benchmarks: JSON.stringify({ businessModel: "B2B SaaS" }, null, 2),
+    competitor_pricing_audit: JSON.stringify({ competitorName: "Legacy SaaS Agency", modelType: "seat-based" }, null, 2),
+    web_search: JSON.stringify({ query: "startup marketing strategy 2026", limit: 3 }, null, 2),
+    tech_trends: JSON.stringify({ topic: "startup growth", limit: 3 }, null, 2),
+    query_brain_context: JSON.stringify({ tenantId: "tenant-foundry-dev" }, null, 2)
+  };
+
+  if (toolTestSelect && toolTestInput) {
+    toolTestSelect.addEventListener("change", () => {
+      const selected = toolTestSelect.value;
+      if (defaultToolInputs[selected]) {
+        toolTestInput.value = defaultToolInputs[selected];
+      }
+    });
+  }
+
+  if (btnRunToolTest && toolTestSelect && toolTestInput) {
+    btnRunToolTest.addEventListener("click", async () => {
+      const toolName = toolTestSelect.value;
+      let parsedInput = {};
+      try {
+        parsedInput = JSON.parse(toolTestInput.value);
+      } catch (err) {
+        alert("Please enter valid JSON for tool parameters.");
+        return;
+      }
+
+      btnRunToolTest.textContent = "Executing...";
+      btnRunToolTest.disabled = true;
+
+      try {
+        const res = await fetch("/api/tools/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolName,
+            input: parsedInput,
+            tenantId: state.tenantId
+          })
+        });
+
+        const data = await res.json();
+        if (toolTestResult && toolTestResultWrap) {
+          toolTestResultWrap.style.display = "block";
+          toolTestResult.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        if (toolTestResult && toolTestResultWrap) {
+          toolTestResultWrap.style.display = "block";
+          toolTestResult.textContent = `Error: ${String(err)}`;
+        }
+      } finally {
+        btnRunToolTest.textContent = "Execute Tool via MCP →";
+        btnRunToolTest.disabled = false;
+      }
+    });
+  }
+
+  if (btnRefreshMcpTools) {
+    btnRefreshMcpTools.addEventListener("click", () => {
+      fetchMcpServersAndTools();
+    });
+  }
+
+  // Pre-load MCP state
+  fetchMcpServersAndTools();
+
+  // =============================================
+  // 14. Interactive Tutorial Engine
+  // =============================================
+  // Each step specifies a CSS selector to spotlight, which navigation view 
+  // to switch to before highlighting, and content for the tooltip card.
+  // The spotlight uses a box-shadow cutout technique — a single element 
+  // casts a massive shadow that covers the entire viewport, creating the 
+  // "dimmed everything except this" illusion without needing a canvas.
+
+  const tutorialSteps = [
+    {
+      target: ".chat-welcome",
+      view: "chat-view",
+      title: "👋 Welcome to Marketing HQ",
+      desc: "This is your command center. Everything starts here — ask questions, assign tasks to AI employees, and get back polished marketing documents instead of raw AI output."
+    },
+    {
+      target: ".suggestions-grid",
+      view: "chat-view",
+      title: "⚡ Quick-Launch Strategic Cards",
+      desc: "These are your one-click starting points. Each card sends a pre-written strategic prompt to a specialist AI employee. Try \"Market Intelligence Audit\" to instantly get a full competitive landscape analysis."
+    },
+    {
+      target: ".agent-selector-bar",
+      view: "chat-view",
+      title: "🎯 Target a Specific AI Employee",
+      desc: "Use the dropdown to route your request to a specific specialist (Market Research, Competitor Intel, Brand Strategist, or GTM Funnel). Set it to 'Auto Route' and the system intelligently picks the best employee for the job."
+    },
+    {
+      target: ".brain-completeness-card",
+      view: "chat-view",
+      title: "🧠 Company Brain Knowledge Meter",
+      desc: "This shows how much your AI team knows about your company. Click it to open the setup wizard and teach your team about your product, audience, competitors, and brand voice. The more context you provide, the better the outputs."
+    },
+    {
+      target: "#nav-employees",
+      view: "chat-view",
+      navClick: "nav-employees",
+      title: "👥 Meet Your AI Marketing Team",
+      desc: "Navigate here to see all 5 AI employees with their specialties, roles, and capabilities. Click 'Assign Task' on any card to instantly deploy them on a mission."
+    },
+    {
+      target: "#nav-brain",
+      view: "employees-view",
+      navClick: "nav-brain",
+      title: "📚 Company Brain — Your Knowledge Base",
+      desc: "This is the persistent memory powering every AI employee. When you update company details here, all agents stay aligned. Think of it as the single source of truth for your brand."
+    },
+    {
+      target: "#nav-archive",
+      view: "brain-view",
+      navClick: "nav-archive",
+      title: "📁 Saved Marketing Reports",
+      desc: "Every report, strategy document, and competitive teardown your AI team generates is automatically saved here. Review, copy, and build on past work without losing anything."
+    },
+    {
+      target: "#nav-plugins",
+      view: "archive-view",
+      navClick: "nav-plugins",
+      title: "🔧 Plugins & MCP Tools",
+      desc: "Your AI employees are powered by real-time tools via the Model Context Protocol — web search, SEO keyword analysis, CAC/LTV calculators, and brain memory queries. Test any tool directly from the playground."
+    },
+    {
+      target: "#nav-token-analytics",
+      view: "plugins-view",
+      navClick: "nav-token-analytics",
+      title: "📊 Token Analytics Lab",
+      desc: "For the technically curious — inspect real-time context token budgets, see exactly how much of the prompt window each layer consumes, and simulate different configurations. This is your engine telemetry."
+    }
+  ];
+
+  let tutorialCurrentStep = 0;
+  let tutorialActive = false;
+  let previousHighlight = null;
+
+  const tutOverlay = document.getElementById("tutorial-overlay");
+  const tutSpotlight = document.getElementById("tutorial-spotlight");
+  const tutTooltip = document.getElementById("tutorial-tooltip");
+  const tutTitle = document.getElementById("tutorial-tooltip-title");
+  const tutDesc = document.getElementById("tutorial-tooltip-desc");
+  const tutBadge = document.getElementById("tutorial-step-badge");
+  const tutDots = document.getElementById("tutorial-progress-dots");
+  const tutBtnPrev = document.getElementById("tutorial-btn-prev");
+  const tutBtnNext = document.getElementById("tutorial-btn-next");
+  const tutBtnClose = document.getElementById("tutorial-close-btn");
+  const tutTrigger = document.getElementById("btn-start-tutorial");
+
+  function renderTutorialDots() {
+    if (!tutDots) return;
+    tutDots.innerHTML = tutorialSteps
+      .map((_, i) => {
+        let cls = "tutorial-dot";
+        if (i === tutorialCurrentStep) cls += " active";
+        else if (i < tutorialCurrentStep) cls += " completed";
+        return `<span class="${cls}"></span>`;
+      })
+      .join("");
+  }
+
+  function positionTooltip(targetRect) {
+    if (!tutTooltip) return;
+    const tooltipWidth = 400;
+    const tooltipHeight = tutTooltip.offsetHeight || 200;
+    const padding = 16;
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+
+    let left, top;
+
+    // Prefer placing to the right of the target
+    if (targetRect.right + padding + tooltipWidth < vpW) {
+      left = targetRect.right + padding;
+      top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2);
+    }
+    // Then try left
+    else if (targetRect.left - padding - tooltipWidth > 0) {
+      left = targetRect.left - padding - tooltipWidth;
+      top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2);
+    }
+    // Then try below
+    else if (targetRect.bottom + padding + tooltipHeight < vpH) {
+      left = Math.max(20, targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2));
+      top = targetRect.bottom + padding;
+    }
+    // Fallback: above
+    else {
+      left = Math.max(20, targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2));
+      top = Math.max(20, targetRect.top - padding - tooltipHeight);
+    }
+
+    // Keep tooltip in viewport
+    left = Math.max(20, Math.min(left, vpW - tooltipWidth - 20));
+    top = Math.max(20, Math.min(top, vpH - tooltipHeight - 20));
+
+    tutTooltip.style.left = `${left}px`;
+    tutTooltip.style.top = `${top}px`;
+  }
+
+  function showTutorialStep(index) {
+    if (index < 0 || index >= tutorialSteps.length) return;
+    tutorialCurrentStep = index;
+    const step = tutorialSteps[index];
+
+    // Navigate to the correct view first if we need a nav click
+    if (step.navClick) {
+      const navBtn = document.getElementById(step.navClick);
+      if (navBtn) navBtn.click();
+    }
+
+    // Small delay to let the view switch render before we measure positions
+    setTimeout(() => {
+      // Remove previous highlight
+      if (previousHighlight) {
+        previousHighlight.classList.remove("tutorial-highlight-target");
+        previousHighlight = null;
+      }
+
+      const targetEl = document.querySelector(step.target);
+      if (!targetEl) {
+        // Target not found, try next step
+        if (index < tutorialSteps.length - 1) showTutorialStep(index + 1);
+        return;
+      }
+
+      // Scroll the target into view if needed
+      targetEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+
+      setTimeout(() => {
+        const rect = targetEl.getBoundingClientRect();
+        const spotPad = 8;
+
+        // Position spotlight cutout
+        if (tutSpotlight) {
+          tutSpotlight.style.left = `${rect.left - spotPad}px`;
+          tutSpotlight.style.top = `${rect.top - spotPad}px`;
+          tutSpotlight.style.width = `${rect.width + spotPad * 2}px`;
+          tutSpotlight.style.height = `${rect.height + spotPad * 2}px`;
+        }
+
+        targetEl.classList.add("tutorial-highlight-target");
+        previousHighlight = targetEl;
+
+        // Update tooltip content
+        if (tutTitle) tutTitle.textContent = step.title;
+        if (tutDesc) tutDesc.textContent = step.desc;
+        if (tutBadge) tutBadge.textContent = `Step ${index + 1} of ${tutorialSteps.length}`;
+
+        // Button states
+        if (tutBtnPrev) tutBtnPrev.disabled = index === 0;
+        if (tutBtnNext) {
+          tutBtnNext.textContent = index === tutorialSteps.length - 1 ? "Finish ✓" : "Next →";
+        }
+
+        renderTutorialDots();
+        positionTooltip(rect);
+
+        // Re-trigger tooltip animation
+        if (tutTooltip) {
+          tutTooltip.style.animation = "none";
+          // Force reflow
+          void tutTooltip.offsetHeight;
+          tutTooltip.style.animation = "tutorial-tooltip-enter 0.35s cubic-bezier(0.4, 0, 0.2, 1)";
+        }
+      }, 150);
+    }, step.navClick ? 200 : 50);
+  }
+
+  function startTutorial() {
+    tutorialActive = true;
+    tutorialCurrentStep = 0;
+    if (tutOverlay) tutOverlay.classList.add("active");
+
+    // Ensure we start from the chat view
+    const chatNav = document.getElementById("nav-chat");
+    if (chatNav) chatNav.click();
+
+    setTimeout(() => showTutorialStep(0), 300);
+  }
+
+  function endTutorial() {
+    tutorialActive = false;
+    if (tutOverlay) tutOverlay.classList.remove("active");
+
+    if (previousHighlight) {
+      previousHighlight.classList.remove("tutorial-highlight-target");
+      previousHighlight = null;
+    }
+
+    localStorage.setItem("foundry_tutorial_seen", "true");
+
+    // Navigate back to workspace
+    const chatNav = document.getElementById("nav-chat");
+    if (chatNav) chatNav.click();
+  }
+
+  if (tutTrigger) {
+    tutTrigger.addEventListener("click", startTutorial);
+  }
+
+  if (tutBtnNext) {
+    tutBtnNext.addEventListener("click", () => {
+      if (tutorialCurrentStep >= tutorialSteps.length - 1) {
+        endTutorial();
+        appendMessage(
+          "FoundryOS Assistant",
+          `<strong>Tutorial Complete! 🎉</strong><br>You've seen all the key features. Start by clicking a Quick-Launch card above, or type any marketing question to put your AI team to work. You can re-open this tutorial anytime from the header.`,
+          false,
+          "FOS"
+        );
+      } else {
+        showTutorialStep(tutorialCurrentStep + 1);
+      }
+    });
+  }
+
+  if (tutBtnPrev) {
+    tutBtnPrev.addEventListener("click", () => {
+      if (tutorialCurrentStep > 0) {
+        showTutorialStep(tutorialCurrentStep - 1);
+      }
+    });
+  }
+
+  if (tutBtnClose) {
+    tutBtnClose.addEventListener("click", endTutorial);
+  }
+
+  // Handle window resize — reposition spotlight and tooltip
+  window.addEventListener("resize", () => {
+    if (!tutorialActive) return;
+    const step = tutorialSteps[tutorialCurrentStep];
+    if (!step) return;
+    const targetEl = document.querySelector(step.target);
+    if (!targetEl) return;
+    const rect = targetEl.getBoundingClientRect();
+    const spotPad = 8;
+    if (tutSpotlight) {
+      tutSpotlight.style.left = `${rect.left - spotPad}px`;
+      tutSpotlight.style.top = `${rect.top - spotPad}px`;
+      tutSpotlight.style.width = `${rect.width + spotPad * 2}px`;
+      tutSpotlight.style.height = `${rect.height + spotPad * 2}px`;
+    }
+    positionTooltip(rect);
+  });
+
+  // Clicking on the dark overlay area should not close the tutorial 
+  // (the close button is dedicated for that), but clicking the overlay
+  // backdrop should advance to the next step for power users
+  if (tutOverlay) {
+    tutOverlay.addEventListener("click", (e) => {
+      if (e.target === tutOverlay || e.target.classList.contains("tutorial-spotlight")) {
+        // Do nothing — prevent accidental closes
+      }
     });
   }
 });

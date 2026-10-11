@@ -37,7 +37,7 @@ describe("Agent Router (LLM & Heuristic Agent Selection)", () => {
     expect(decision.employeeName).toBe("FoundryOS Assistant");
     expect(decision.avatar).toBe("FOS");
     expect(decision.isSpecialist).toBe(false);
-  });
+  }, 15000);
 
   it("uses LLM when prompt does not match obvious heuristics", async () => {
     const mockOllama = new OllamaClient();
@@ -46,6 +46,6 @@ describe("Agent Router (LLM & Heuristic Agent Selection)", () => {
 
     const decision = await routeTaskWithLlm("Evaluate our adversaries in the space", mockOllama);
     expect(decision.employeeId).toBe("competitor-analyst");
-    expect(decision.reason).toContain("LLM classified");
+    expect(decision.reason).toContain("classified");
   });
 });

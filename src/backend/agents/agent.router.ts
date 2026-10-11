@@ -1,4 +1,5 @@
-import { OllamaClient, ollamaClient } from "../models/ollama.client.js";
+import type { LLMClient } from "../models/llm.interface.js";
+import { resolveLLMClient } from "../models/llm.resolver.js";
 
 export type RouteTargetRole =
   | "market-research-analyst"
@@ -14,6 +15,7 @@ export interface RoutingDecision {
   pillar: string;
   reason: string;
   isSpecialist: boolean;
+  isLightweight: boolean;
 }
 
 const ROLE_METADATA: Record<RouteTargetRole, { employeeName: string; avatar: string; pillar: string }> = {
@@ -38,102 +40,118 @@ const ROLE_METADATA: Record<RouteTargetRole, { employeeName: string; avatar: str
     pillar: "Strategy"
   },
   "foundryos-assistant": {
-    employeeName: "FoundryOS Assistant",
-    avatar: "FOS",
+    employeeName: "Normal Agent (Lightweight)",
+    avatar: "NA",
     pillar: "Operating System"
   }
 };
 
+const SPECIALIST_KEYWORDS = {
+  competitor: [
+    "competitor", "alternative", "pricing vs", "teardown", "vs ",
+    "competing with", "rival moat", "pricing tier comparison"
+  ],
+  funnel: [
+    "funnel", "tofu", "mofu", "bofu", "conversion offer",
+    "customer journey", "launch campaign", "cac ltv", "retention loop"
+  ],
+  research: [
+    "market trend", "market research", "tam", "sam som", "market demand",
+    "customer pain point", "target segment", "industry shift", "market size"
+  ],
+  positioning: [
+    "positioning statement", "value proposition", "brand pillar",
+    "core narrative", "brand voice", "messaging pillar", "tagline formulation"
+  ]
+};
+
+export function isSpecialistTask(task: string): boolean {
+  const normalized = task.toLowerCase();
+  return (
+    SPECIALIST_KEYWORDS.competitor.some(k => normalized.includes(k)) ||
+    SPECIALIST_KEYWORDS.funnel.some(k => normalized.includes(k)) ||
+    SPECIALIST_KEYWORDS.research.some(k => normalized.includes(k)) ||
+    SPECIALIST_KEYWORDS.positioning.some(k => normalized.includes(k))
+  );
+}
+
 export async function routeTaskWithLlm(
   task: string,
-  ollama: OllamaClient = ollamaClient
+  llm?: LLMClient
 ): Promise<RoutingDecision> {
   const normalized = task.toLowerCase();
 
-  // 1. Fast heuristic classification
-  if (
-    normalized.includes("competitor") ||
-    normalized.includes("alternative") ||
-    normalized.includes("pricing vs") ||
-    normalized.includes("teardown") ||
-    normalized.includes("vs ") ||
-    normalized.includes("competing with")
-  ) {
+  // 1. Fast-path: Greetings, General Q&A, and Non-Specialist Queries -> Normal Agent (Lightweight)
+  if (!isSpecialistTask(task)) {
+    return {
+      employeeId: "foundryos-assistant",
+      ...ROLE_METADATA["foundryos-assistant"],
+      reason: "Bypassed LLM: Routed to Normal Lightweight Agent for fast execution",
+      isSpecialist: false,
+      isLightweight: true
+    };
+  }
+
+  // 2. High-speed heuristic classification for specialist tasks
+  if (SPECIALIST_KEYWORDS.competitor.some(k => normalized.includes(k))) {
     return {
       employeeId: "competitor-analyst",
       ...ROLE_METADATA["competitor-analyst"],
-      reason: "Competitive intelligence and teardown request detected",
-      isSpecialist: true
+      reason: "Heuristic: Competitive intelligence & teardown analysis",
+      isSpecialist: true,
+      isLightweight: false
     };
   }
 
-  if (
-    normalized.includes("funnel") ||
-    normalized.includes("tofu") ||
-    normalized.includes("mofu") ||
-    normalized.includes("bofu") ||
-    normalized.includes("offer") ||
-    normalized.includes("conversion offer") ||
-    normalized.includes("customer journey") ||
-    normalized.includes("launch campaign")
-  ) {
+  if (SPECIALIST_KEYWORDS.funnel.some(k => normalized.includes(k))) {
     return {
       employeeId: "gtm-funnel-strategist",
       ...ROLE_METADATA["gtm-funnel-strategist"],
-      reason: "Go-to-market funnel and offer architecture detected",
-      isSpecialist: true
+      reason: "Heuristic: GTM funnel & conversion architecture",
+      isSpecialist: true,
+      isLightweight: false
     };
   }
 
-  if (
-    normalized.includes("market trend") ||
-    normalized.includes("market research") ||
-    normalized.includes("tam") ||
-    normalized.includes("market demand") ||
-    normalized.includes("customer pain point") ||
-    normalized.includes("target segment") ||
-    normalized.includes("industry shift")
-  ) {
+  if (SPECIALIST_KEYWORDS.research.some(k => normalized.includes(k))) {
     return {
       employeeId: "market-research-analyst",
       ...ROLE_METADATA["market-research-analyst"],
-      reason: "Market intelligence and demand audit detected",
-      isSpecialist: true
+      reason: "Heuristic: Market research & demand trends",
+      isSpecialist: true,
+      isLightweight: false
     };
   }
 
-  if (
-    normalized.includes("positioning") ||
-    normalized.includes("value proposition") ||
-    normalized.includes("brand pillar") ||
-    normalized.includes("core narrative") ||
-    normalized.includes("brand voice") ||
-    normalized.includes("messaging pillar")
-  ) {
+  if (SPECIALIST_KEYWORDS.positioning.some(k => normalized.includes(k))) {
     return {
       employeeId: "chief-marketing-strategist",
       ...ROLE_METADATA["chief-marketing-strategist"],
-      reason: "Brand positioning and strategic narrative detected",
-      isSpecialist: true
+      reason: "Heuristic: Brand positioning & narrative pillars",
+      isSpecialist: true,
+      isLightweight: false
     };
   }
 
-  // 2. Intelligent LLM classification for ambiguous queries
+  // 3. Fallback to LLM only if ambiguous specialist query
+  const client = llm ?? resolveLLMClient();
   try {
-    const isUp = await ollama.isAvailable();
+    const isUp = await client.isAvailable();
     if (isUp) {
-      const prompt = `Classify this startup founder query into exactly one role name:
-- market-research-analyst (trends, demand, TAM, pain points)
-- competitor-analyst (competitors, comparison, teardowns, differentiation)
-- chief-marketing-strategist (positioning, messaging, brand pillars)
-- gtm-funnel-strategist (funnels, conversion, offers, launch steps)
-- foundryos-assistant (general advice, greetings, overview, broad marketing questions)
+      const prompt = `Classify this startup founder query into exactly one role:
+- market-research-analyst (trends, demand, TAM)
+- competitor-analyst (competitors, comparison, teardowns)
+- chief-marketing-strategist (positioning, messaging, brand)
+- gtm-funnel-strategist (funnels, conversion, offers)
+- foundryos-assistant (general, lightweight)
 
-Founder Query: "${task.slice(0, 240)}"
-Classification:`;
+Founder Query: "${task.slice(0, 200)}"
+Role:`;
 
-      const response = await ollama.generate(prompt, {
-        system: "You are an AI router. Respond with ONLY the role name."
+      const response = await client.generate(prompt, {
+        system: "Respond with only the role name.",
+        temperature: 0.1,
+        maxTokens: 25
       });
 
       const cleaned = response.trim().toLowerCase();
@@ -141,43 +159,48 @@ Classification:`;
         return {
           employeeId: "market-research-analyst",
           ...ROLE_METADATA["market-research-analyst"],
-          reason: "LLM classified as Market Research",
-          isSpecialist: true
+          reason: `LLM classified as Market Research`,
+          isSpecialist: true,
+          isLightweight: false
         };
       }
       if (cleaned.includes("competitor")) {
         return {
           employeeId: "competitor-analyst",
           ...ROLE_METADATA["competitor-analyst"],
-          reason: "LLM classified as Competitor Intelligence",
-          isSpecialist: true
+          reason: `LLM classified as Competitor Intelligence`,
+          isSpecialist: true,
+          isLightweight: false
         };
       }
       if (cleaned.includes("chief-marketing") || (cleaned.includes("strategist") && !cleaned.includes("funnel"))) {
         return {
           employeeId: "chief-marketing-strategist",
           ...ROLE_METADATA["chief-marketing-strategist"],
-          reason: "LLM classified as Brand & Marketing Strategy",
-          isSpecialist: true
+          reason: `LLM classified as Brand & Marketing Strategy`,
+          isSpecialist: true,
+          isLightweight: false
         };
       }
       if (cleaned.includes("gtm") || cleaned.includes("funnel")) {
         return {
           employeeId: "gtm-funnel-strategist",
           ...ROLE_METADATA["gtm-funnel-strategist"],
-          reason: "LLM classified as GTM Funnel Strategy",
-          isSpecialist: true
+          reason: `LLM classified as GTM Funnel Strategy`,
+          isSpecialist: true,
+          isLightweight: false
         };
       }
     }
   } catch {
-    // Fall back to general assistant
+    // Graceful fallback to lightweight normal agent
   }
 
   return {
     employeeId: "foundryos-assistant",
     ...ROLE_METADATA["foundryos-assistant"],
-    reason: "General startup marketing consultation",
-    isSpecialist: false
+    reason: "Optimized fallback: Normal Lightweight Agent",
+    isSpecialist: false,
+    isLightweight: true
   };
 }

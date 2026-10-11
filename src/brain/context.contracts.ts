@@ -49,7 +49,8 @@ export const EmployeeRoleEnum = z.enum([
   "competitor_analyst",
   "marketing_analyst",
   "strategist",
-  "general_assistant"
+  "general_assistant",
+  "multi_agent_team"
 ]);
 
 export type EmployeeRole = z.infer<typeof EmployeeRoleEnum>;

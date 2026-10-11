@@ -8,9 +8,9 @@ import {
 } from "../../src/backend/employees/employee.catalog.js";
 
 describe("Research & Strategy AI Employee Workforce", () => {
-  it("should have 4 specialized AI employees plus the FoundryOS Assistant in the registry", () => {
+  it("should have specialized AI employees plus Assistant and Multi-Agent Team in registry", () => {
     const employees = employeeRegistry.listEmployees();
-    expect(employees.length).toBe(5);
+    expect(employees.length).toBe(6);
   });
 
   it("should filter employees by pillar correctly", () => {
@@ -18,7 +18,7 @@ describe("Research & Strategy AI Employee Workforce", () => {
     const strategyEmployees = employeeRegistry.getEmployeesByPillar("strategy");
 
     expect(researchEmployees.length).toBe(2);
-    expect(strategyEmployees.length).toBe(3);
+    expect(strategyEmployees.length).toBe(4);
 
     expect(researchEmployees.map((e) => e.identity.id)).toContain("market-research-analyst");
     expect(researchEmployees.map((e) => e.identity.id)).toContain("competitor-analyst");

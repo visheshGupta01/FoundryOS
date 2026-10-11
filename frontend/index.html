@@ -40,6 +40,12 @@
             <span>Saved Reports</span>
           </button>
 
+          <button class="nav-item" id="nav-plugins" data-view="plugins-view">
+            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            <span>Plugins & MCP</span>
+            <span class="nav-badge" id="mcp-servers-count-badge">4 MCP</span>
+          </button>
+
           <!-- SEPARATE DEDICATED SECTION: Token Analytics -->
           <button class="nav-item" id="nav-token-analytics" data-view="token-analytics-view" style="margin-top: 10px; border-top: 1px dashed var(--border-subtle); padding-top: 12px;">
             <svg viewBox="0 0 24 24"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
@@ -89,10 +95,19 @@
           <span id="active-view-name">Marketing Workspace</span>
         </div>
         <div class="top-bar-actions">
+          <div class="credit-status-pill" id="header-credit-pill" title="Daily Allowance: 100 Credits (80,000 Tokens) • 1 Credit = 800 Tokens • Resets daily at midnight UTC">
+            <span class="credit-icon">⚡</span>
+            <span id="header-credit-text">100/100 Credits</span>
+            <span class="credit-subtext">(1 cr = 800 tok)</span>
+          </div>
           <div class="brain-status-pill" title="Company Brain Connected">
             <span style="font-weight: 700;">●</span>
             <span id="header-brain-status">Brain: Connected</span>
           </div>
+          <button class="btn-tutorial-trigger" id="btn-start-tutorial" title="Interactive Tutorial — Learn how FoundryOS works">
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span>Tutorial</span>
+          </button>
           <button class="btn-icon-round" id="btn-clear-chat" title="New Session">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
@@ -153,19 +168,38 @@
         <!-- Floating Input Dock -->
         <div class="chat-dock">
           <div class="input-capsule">
-            <!-- Attached File Preview Container -->
-            <div id="attached-file-chip" class="attached-file-chip hidden">
-              <div class="attached-file-info">
-                <span class="file-icon">📎</span>
-                <span class="file-name" id="attached-file-name">document.txt</span>
-                <span class="file-size" id="attached-file-size">(0 KB)</span>
+            <!-- Chat Agent Selector Header -->
+            <div class="agent-selector-bar">
+              <div class="agent-selector-left">
+                <span class="agent-selector-icon">🎯</span>
+                <span class="agent-selector-label">Target Agent:</span>
+                <select id="chat-agent-select" class="chat-agent-select" title="Select specific AI Employee or Auto-route">
+                  <option value="auto" selected>🤖 Auto Route (Intelligent Router)</option>
+                  <option value="foundryos-assistant">🌟 Executive Assistant (General Strategy)</option>
+                  <option value="market-research-analyst">🔍 Market Research Analyst</option>
+                  <option value="competitor-analyst">⚔️ Competitor Intelligence Analyst</option>
+                  <option value="chief-marketing-strategist">🎯 Chief Marketing Strategist</option>
+                  <option value="gtm-funnel-strategist">📈 GTM & Funnel Strategist</option>
+                  <option value="multi-agent">👥 Multi-Agent Team (Cross-Functional Review)</option>
+                </select>
               </div>
-              <button class="btn-remove-attachment" id="btn-remove-attachment" type="button" title="Remove attachment" aria-label="Remove attachment">&times;</button>
+              <div class="agent-selector-right">
+                <span class="tools-active-badge" id="tools-active-badge" title="4 MCP servers with 12 tools connected">🛠️ 4 MCP Servers Active</span>
+              </div>
+            </div>
+
+            <!-- Multi-File Attachment Preview Container (Max 5 Files) -->
+            <div id="attached-files-container" class="attached-files-container hidden">
+              <div class="attached-files-header">
+                <span id="attached-files-count" class="attached-files-count">0 / 5 files attached</span>
+                <button type="button" class="btn-clear-all-attachments" id="btn-clear-all-attachments" title="Clear all attached files">Clear all</button>
+              </div>
+              <div class="attached-files-chips" id="attached-files-chips"></div>
             </div>
 
             <div class="input-row-main">
-              <!-- Hidden file input for uploads -->
-              <input type="file" id="chat-file-input" style="display: none;" accept=".txt,.md,.pdf,.doc,.docx,.csv,.json,.yaml,.yml">
+              <!-- Hidden multi-file input for uploads (Max 5) -->
+              <input type="file" id="chat-file-input" style="display: none;" multiple accept=".txt,.md,.pdf,.doc,.docx,.csv,.json,.yaml,.yml">
               
               <button class="btn-attach" id="btn-upload-file" type="button" title="Attach notes, customer interviews, competitor docs, or pitch deck">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -426,6 +460,97 @@
           </div>
         </div>
       </section>
+
+      <!-- View 6: PLUGINS & MODEL CONTEXT PROTOCOL (MCP) ECOSYSTEM -->
+      <section class="view-panel" id="plugins-view">
+        <div class="view-header">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h2 class="view-title">Model Context Protocol (MCP) & Plugins</h2>
+              <p class="view-subtitle">The extensible tool ecosystem giving your AI employees real-time web research, SEO audits, SaaS analytics, and persistent memory.</p>
+            </div>
+            <button class="btn-primary" id="btn-refresh-mcp-tools" style="font-size: 0.82rem; padding: 8px 16px;">
+              Refresh MCP Servers
+            </button>
+          </div>
+        </div>
+
+        <div style="padding: 24px 32px; display: flex; flex-direction: column; gap: 24px;">
+          <!-- MCP Stat Boxes -->
+          <div class="brain-stats-row" style="padding: 0;">
+            <div class="stat-box">
+              <div class="stat-number" id="stat-mcp-servers-count">4</div>
+              <div class="stat-label">Connected MCP Servers</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="stat-mcp-tools-count">12</div>
+              <div class="stat-label">Registered Tools</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="stat-mcp-daily-credits">100</div>
+              <div class="stat-label">Daily Credits (80k Tokens)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" style="font-size: 1.1rem; color: var(--accent-teal);">Active</div>
+              <div class="stat-label">MCP Protocol Standard</div>
+            </div>
+          </div>
+
+          <!-- Connected MCP Servers Grid -->
+          <div>
+            <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">Connected MCP Servers</div>
+            <div class="agents-grid" id="mcp-servers-grid" style="padding: 0;">
+              <!-- Populated dynamically via app.js -->
+            </div>
+          </div>
+
+          <!-- Interactive Tool Testing Playground -->
+          <div class="token-debugger-card" style="margin: 0;">
+            <div class="debugger-header">
+              <div class="debugger-title-group">
+                <div class="debugger-icon">⚡</div>
+                <div>
+                  <div class="debugger-title">MCP Tool Execution Playground</div>
+                  <div style="font-size: 0.76rem; color: var(--text-tertiary);">Directly invoke any MCP tool to test its output and verify agent capabilities</div>
+                </div>
+              </div>
+              <span class="debugger-status-tag optimal">READY</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 14px;">
+              <div class="form-group">
+                <label class="form-label">Select Tool to Test</label>
+                <select class="form-select" id="tool-test-select">
+                  <option value="keyword_suggester">keyword_suggester (SEO & Competitor MCP)</option>
+                  <option value="cac_ltv_calculator">cac_ltv_calculator (Growth & GTM MCP)</option>
+                  <option value="value_prop_evaluator">value_prop_evaluator (Growth & GTM MCP)</option>
+                  <option value="funnel_benchmarks">funnel_benchmarks (Growth & GTM MCP)</option>
+                  <option value="competitor_pricing_audit">competitor_pricing_audit (SEO & Competitor MCP)</option>
+                  <option value="web_search">web_search (Market Intel MCP)</option>
+                  <option value="tech_trends">tech_trends (Market Intel MCP)</option>
+                  <option value="query_brain_context">query_brain_context (Brain Memory MCP)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Tool Input Parameters (JSON)</label>
+                <textarea id="tool-test-input" class="input-standard" style="height: 80px; font-family: monospace; font-size: 0.8rem;" rows="3">{"seedTopic": "AI marketing for startups"}</textarea>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+              <button class="btn-primary" id="btn-run-tool-test" style="font-size: 0.82rem; padding: 8px 18px;">
+                Execute Tool via MCP →
+              </button>
+            </div>
+
+            <div id="tool-test-result-wrap" style="margin-top: 16px; display: none;">
+              <div style="font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: var(--text-secondary);">Execution Response:</div>
+              <pre id="tool-test-result" style="background: rgba(0,0,0,0.4); padding: 14px; border-radius: 8px; font-size: 0.78rem; max-height: 240px; overflow-y: auto; color: var(--accent-teal); border: 1px solid var(--border-subtle);"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -467,7 +592,9 @@
       <div class="form-group">
         <label class="form-label">AI Engine</label>
         <select class="form-select" id="setting-model">
-          <option value="llama3.2:1b">Local Fast Engine (llama3.2:1b)</option>
+          <option value="gpt-4o-mini" selected>GPT-4o Mini (Fast & Efficient)</option>
+          <option value="gpt-4o">GPT-4o (Deep Strategy)</option>
+          <option value="llama3.2:1b">Local Ollama (llama3.2:1b)</option>
           <option value="trueforge">TrueForge Production Engine</option>
         </select>
       </div>
@@ -478,10 +605,30 @@
           <option value="2048">2,048 Tokens (Standard)</option>
           <option value="4096" selected>4,096 Tokens (High Context)</option>
           <option value="8192">8,192 Tokens (Deep Analysis)</option>
+          <option value="16384">16,384 Tokens (Extended)</option>
+          <option value="128000">128,000 Tokens (Max Context)</option>
         </select>
       </div>
 
       <button class="btn-primary" id="btn-save-settings" style="height: 42px; margin-top: 8px;">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Interactive Tutorial Overlay System -->
+  <div id="tutorial-overlay" class="tutorial-overlay">
+    <div class="tutorial-spotlight" id="tutorial-spotlight"></div>
+    <div class="tutorial-tooltip" id="tutorial-tooltip">
+      <div class="tutorial-tooltip-header">
+        <span class="tutorial-step-badge" id="tutorial-step-badge">Step 1 of 9</span>
+        <button class="tutorial-close-btn" id="tutorial-close-btn" title="Exit Tutorial">✕</button>
+      </div>
+      <h3 class="tutorial-tooltip-title" id="tutorial-tooltip-title">Welcome</h3>
+      <p class="tutorial-tooltip-desc" id="tutorial-tooltip-desc">Description here</p>
+      <div class="tutorial-tooltip-actions">
+        <button class="tutorial-btn-secondary" id="tutorial-btn-prev">← Back</button>
+        <div class="tutorial-progress-dots" id="tutorial-progress-dots"></div>
+        <button class="tutorial-btn-primary" id="tutorial-btn-next">Next →</button>
+      </div>
     </div>
   </div>
 

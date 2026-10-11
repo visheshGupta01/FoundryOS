@@ -5,6 +5,8 @@ import { extname, join } from "node:path";
 import { env } from "./config/env.js";
 import { logger } from "./shared/logger.js";
 import { handleApiRoute } from "./routes/api.router.js";
+import { initializePlugins } from "./plugins/index.js";
+import { mcpManager } from "./mcp/mcp.manager.js";
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html",
@@ -53,6 +55,11 @@ async function requestHandler(req: IncomingMessage, res: ServerResponse): Promis
 }
 
 export function startServer(port: number = env.PORT) {
+  initializePlugins();
+  mcpManager.initialize().catch((err) => {
+    logger.warn("MCP Manager initialization deferred", { error: String(err) });
+  });
+
   const server = createServer(requestHandler);
   server.listen(port, () => {
     logger.info(`FoundryOS Marketing Operating System running on http://localhost:${port}`, { port, env: env.NODE_ENV });

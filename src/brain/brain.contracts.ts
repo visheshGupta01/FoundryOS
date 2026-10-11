@@ -249,6 +249,7 @@ export type DocumentChunk = z.infer<typeof DocumentChunkSchema>;
 export const VectorSearchQuerySchema = z.object({
   tenantId: z.string().min(1).max(64),
   embedding: z.array(z.number()).min(1),
+  queryText: z.string().optional(),
   limit: z.number().int().positive().max(100).default(10),
   minSimilarity: z.number().min(0).max(1).default(0.5),
   metadataFilter: z.record(z.unknown()).optional(),

@@ -6,17 +6,26 @@ import { BrainService } from "../../src/brain/brain.service.js";
 import { BrainRepository } from "../../src/brain/brain.repository.js";
 import type { DatabasePool } from "../../src/databases/postgres.client.js";
 
+/*
+  Tests use OllamaClient as the LLMClient implementation because it
+  implements the same LLMClient interface as OpenAIClient. Since we
+  mock isAvailable() → false, the runner always hits the deterministic
+  fallback path. This tests the orchestration logic, not the LLM.
+  
+  For integration tests with real OpenAI, you'd pass an OpenAIClient
+  instance with a test API key instead.
+*/
 describe("AgentRunner (Research & Strategy AI Execution)", () => {
   const tenantId = "tenant-runner-test";
 
   function createMockDependencies() {
-    const mockOllama = new OllamaClient();
+    const mockLLM = new OllamaClient();
     const mockTrueForge = new TrueForgeService({} as any);
     const mockPool = {} as unknown as DatabasePool;
     const mockRepo = new BrainRepository(mockPool);
     const mockBrain = new BrainService(mockRepo);
 
-    vi.spyOn(mockOllama, "isAvailable").mockResolvedValue(false);
+    vi.spyOn(mockLLM, "isAvailable").mockResolvedValue(false);
     vi.spyOn(mockBrain, "proposeMemory").mockResolvedValue("mem-proposed-123");
 
     vi.spyOn(mockRepo, "getCompanyProfile").mockResolvedValue({
@@ -122,12 +131,12 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
       }
     ]);
 
-    return { mockOllama, mockTrueForge, mockBrain, mockRepo };
+    return { mockLLM, mockTrueForge, mockBrain, mockRepo };
   }
 
   it("should execute Market Research Analyst and return structured market trends", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -151,8 +160,8 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
   });
 
   it("should execute Competitor Intelligence Analyst and return competitor teardowns", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -168,8 +177,8 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
   });
 
   it("should execute Chief Marketing Strategist and require human approval gate", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -186,8 +195,8 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
   });
 
   it("should dynamically route ambiguous tasks to foundryos-assistant when employeeId is omitted", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -202,8 +211,8 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
   });
 
   it("should dynamically route competitor tasks to competitor-analyst when employeeId is omitted", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -215,8 +224,8 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
   });
 
   it("should accept attached documents and inject them into execution context", async () => {
-    const { mockOllama, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
-    const runner = new AgentRunner(mockOllama, mockTrueForge, mockBrain, mockRepo);
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
 
     const result = await runner.run({
       tenantId,
@@ -230,5 +239,18 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
     expect(result.employeeId).toBe("market-research-analyst");
     expect(result.status).toBe("completed");
     expect(result.output).toBeDefined();
+  });
+
+  it("should include llmProvider in execution results", async () => {
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
+
+    const result = await runner.run({
+      tenantId,
+      employeeId: "foundryos-assistant",
+      task: "Give me startup growth advice."
+    });
+
+    expect(result.llmProvider).toBe("ollama");
   });
 });

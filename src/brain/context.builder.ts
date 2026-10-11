@@ -9,6 +9,7 @@ import {
   type EmployeeContextPackage
 } from "./context.contracts.js";
 import { BrainRepository, brainRepository } from "./brain.repository.js";
+import { semanticMemory } from "./semantic-memory.js";
 import { DomainError } from "../backend/errors/base.error.js";
 import { ErrorCode } from "../backend/errors/error-codes.js";
 
@@ -328,6 +329,27 @@ export async function buildEmployeeContextPackage(
       content: learningItems
     });
     includedLayers.push("learnings");
+  }
+
+  try {
+    const semanticHits = await semanticMemory.search(input.task, {
+      tenantId: input.tenantId,
+      limit: 3,
+      minSimilarity: 0.2
+    });
+
+    if (semanticHits.length > 0) {
+      const recallText = semanticHits
+        .map((h, i) => `[Source ${i + 1}: ${h.item.title} (Relevance: ${(h.similarity * 100).toFixed(0)}%)]\n${h.item.content}`)
+        .join("\n\n");
+      sections.push({
+        title: "SEMANTIC RECALL & RETRIEVED MEMORY",
+        content: recallText
+      });
+      includedLayers.push("semanticRecall");
+    }
+  } catch {
+    // Semantic search graceful fallback
   }
 
   sections.push({

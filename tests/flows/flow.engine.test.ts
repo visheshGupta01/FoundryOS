@@ -31,11 +31,13 @@ describe("FlowEngine (Research & Strategy Sequential Orchestration)", () => {
   it("should run flow step by step and pause at human approval checkpoint", async () => {
     const mockRunner = new AgentRunner();
     vi.spyOn(mockRunner, "run").mockImplementation(async (input) => {
-      if (input.employeeId === "chief-marketing-strategist") {
+      const employeeId = input.employeeId ?? "market-research-analyst";
+
+      if (employeeId === "chief-marketing-strategist") {
         return {
           executionId: "exec-strat",
           tenantId: input.tenantId,
-          employeeId: input.employeeId,
+          employeeId,
           employeeName: "Chief Marketing Strategist",
           avatar: "CS",
           pillar: "strategy",
@@ -44,7 +46,7 @@ describe("FlowEngine (Research & Strategy Sequential Orchestration)", () => {
           output: { positioning: "FoundryOS Positioning" },
           tokenReport: {
             tenantId: input.tenantId,
-            employeeId: input.employeeId,
+            employeeId,
             totalTokensUsed: 1200,
             maxTokenBudget: 4096,
             reservedCompletionBudget: 1024,
@@ -59,7 +61,7 @@ describe("FlowEngine (Research & Strategy Sequential Orchestration)", () => {
       return {
         executionId: "exec-research",
         tenantId: input.tenantId,
-        employeeId: input.employeeId,
+        employeeId,
         employeeName: "Market Research Analyst",
         avatar: "MR",
         pillar: "research",
@@ -68,7 +70,7 @@ describe("FlowEngine (Research & Strategy Sequential Orchestration)", () => {
         output: { trends: ["AI Memory Growth"] },
         tokenReport: {
           tenantId: input.tenantId,
-          employeeId: input.employeeId,
+          employeeId,
           totalTokensUsed: 950,
           maxTokenBudget: 4096,
           reservedCompletionBudget: 1024,

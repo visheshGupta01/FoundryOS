@@ -15,7 +15,11 @@ const EnvSchema = z.object({
   EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
   OLLAMA_BASE_URL: z.string().url().default("http://localhost:11434"),
-  OLLAMA_MODEL: z.string().default("llama3.2:1b")
+  OLLAMA_MODEL: z.string().default("gemma:2b"),
+  OPENAI_API_KEY: z.string().default(""),
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  OPENAI_STRATEGY_MODEL: z.string().default("gpt-4o"),
+  LLM_PROVIDER: z.enum(["openai", "ollama"]).default("ollama")
 });
 
 export type Env = z.infer<typeof EnvSchema>;

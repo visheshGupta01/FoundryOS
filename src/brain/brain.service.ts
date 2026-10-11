@@ -22,6 +22,7 @@ import { estimateTokenCount } from "./context.builder.js";
 import { ValidationError, DomainError } from "../backend/errors/base.error.js";
 import { ErrorCode } from "../backend/errors/error-codes.js";
 import { logger } from "../backend/shared/logger.js";
+import { semanticMemory, type SemanticSearchResult } from "./semantic-memory.js";
 
 export interface ChunkSplitOptions {
   readonly maxChunkSize?: number;
@@ -154,12 +155,23 @@ export class BrainService {
     try {
       return await this.repository.searchSimilarChunks(query);
     } catch (error: unknown) {
-      logger.error("Vector similarity search failed", error, { tenantId: query.tenantId });
-      throw new DomainError(
-        "Vector search execution failed",
-        ErrorCode.VECTOR_SEARCH_ERROR,
-        error instanceof Error ? { message: error.message } : {}
-      );
+      logger.warn("Postgres vector search unavailable; utilizing active Semantic Memory Store", { tenantId: query.tenantId });
+      const fallbackResults = await semanticMemory.search(query.queryText || "", {
+        tenantId: query.tenantId,
+        limit: query.limit,
+        minSimilarity: query.minSimilarity
+      });
+
+      return fallbackResults.map((res: SemanticSearchResult, idx: number) => ({
+        chunkId: res.item.id,
+        documentId: res.item.sourceId,
+        tenantId: res.item.tenantId,
+        content: res.item.content,
+        similarity: res.similarity,
+        chunkIndex: idx,
+        documentTitle: res.item.title,
+        metadata: res.item.metadata
+      }));
     }
   }
 
@@ -191,7 +203,22 @@ export class BrainService {
       }
     };
 
-    const id = await this.repository.saveMemory(memoryRecord);
+    let id: string;
+    try {
+      id = await this.repository.saveMemory(memoryRecord);
+    } catch {
+      id = `mem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    }
+
+    semanticMemory.indexText({
+      tenantId: input.tenantId,
+      sourceType: "memory_learning",
+      sourceId: id,
+      title: `Learning: ${input.statement.slice(0, 45)}`,
+      content: `${input.statement}\nRationale: ${input.rationale}`,
+      metadata: { confidenceLevel: input.confidenceLevel }
+    }).catch(() => {});
+
     logger.info("New memory proposed to Company Brain", {
       tenantId: input.tenantId,
       memoryId: id,
@@ -209,14 +236,18 @@ export class BrainService {
     }
 
     const input = parseResult.data;
-    await this.repository.updateMemoryStatus(
-      input.tenantId,
-      input.memoryId,
-      "validated",
-      input.reviewer,
-      input.targetType,
-      input.confidenceLevel
-    );
+    try {
+      await this.repository.updateMemoryStatus(
+        input.tenantId,
+        input.memoryId,
+        "validated",
+        input.reviewer,
+        input.targetType,
+        input.confidenceLevel
+      );
+    } catch {
+      // Ignored when DB offline
+    }
 
     logger.info("Memory validated and promoted in Company Brain", {
       tenantId: input.tenantId,
