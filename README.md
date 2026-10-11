@@ -1,36 +1,44 @@
 # FoundryOS
 
-Autonomous AI Marketing & Operations Operating System. FoundryOS coordinates specialized autonomous AI employees, semantic knowledge bases ("Company Brain" with pgvector), multi-provider LLM routing (OpenAI GPT primary, Ollama local fallback, TrueForge agents), and distributed queue execution.
+Autonomous AI Specialist Team & Operations Platform. FoundryOS coordinates specialized autonomous AI agents, semantic knowledge bases ("Company Brain" with pgvector), Model Context Protocol (MCP) tools, Human-In-The-Loop (HITL) governance, and multi-provider LLM routing (OpenAI GPT, Ollama local fallback, TrueForge agents).
 
 ---
 
 ## Key Architecture & Capabilities
 
-1. **Autonomous AI Employees Catalog**:
-   - Pre-configured agent personas: Content Creator, SEO Specialist, Analytics Auditor, Campaign Strategist, and more.
-   - Dynamic prompt synthesis tailored to company profile, ICP, tone, and goals.
+1. **Autonomous AI Specialist Team**:
+   - Pre-configured agent personas: Market Research Analyst, Competitive Intelligence Specialist, Chief Brand Strategist, GTM Funnel Architect, and Foundry Assistant.
+   - Dynamic prompt synthesis tailored to company profile, ICP, tone, and strategic goals.
 
-2. **Intelligent Agent Router**:
-   - Two-tier query classification: fast heuristic keyword matching backed by model-driven routing.
-   - Fallback to dedicated FoundryOS general assistant when queries span multiple domains.
+2. **Human-In-The-Loop (HITL) Steering & Governance**:
+   - High-stakes action approval gate before brand commitments, external broadcasts, or memory validations.
+   - Multi-option strategic branching: 3 curated strategic paths + custom prompt input field.
+   - Reactive re-planning: when a direction is rejected, agents immediately recalculate alternative solutions based on feedback.
 
-3. **Company Brain (Semantic Memory & RAG)**:
+3. **Modern High-Contrast Glassmorphic UI (`client/`)**:
+   - React + TypeScript + Vite frontend with smooth view transitions and micro-animations.
+   - Theme-adaptive glowing circuit brain branding with dark and light mode support.
+   - Real-time token usage analytics, daily credit budgeting, and session vaults.
+   - Client-side and server-side PDF deliverable export engine.
+
+4. **Model Context Protocol (MCP) Integration**:
+   - Extensible MCP tool registry and client harness (`src/backend/mcp/`).
+   - Built-in MCP servers: Market Intel, Document Archive, SEO Audits, Brain Memory, Google Drive, and Slack broadcasts.
+
+5. **Company Brain (Semantic Memory & RAG)**:
    - PostgreSQL schema with `pgvector` HNSW index support.
-   - Token-budget-aware context builder with dynamic prioritization.
+   - Token-budget-aware context builder with dynamic memory vector weighting.
+   - Active memory and directives dashboard injecting ICP, tone, and guardrails directly into agent runtimes.
 
-4. **Multi-Provider LLM Engine**:
+6. **Multi-Provider LLM Engine**:
    - **Primary**: OpenAI GPT-4o-mini (fast routing & chat) and GPT-4o (deep strategy generation).
    - **Fallback**: Local Ollama (`llama3.2:1b`, `nomic-embed-text`) for offline/development use.
-   - Native structured JSON output via OpenAI's JSON Schema mode (~99% parse rate vs ~60% with Ollama).
-   - Provider-agnostic `LLMClient` interface — swap providers with a single env variable.
+   - Native structured JSON output via OpenAI's JSON Schema mode.
+   - Provider-agnostic `LLMClient` interface — swap providers with a single environment variable.
    - TrueForge SDK agent harness for cloud session management and execution turns.
 
-5. **Distributed Task Queue**:
+7. **Distributed Task Queue**:
    - BullMQ & Redis-backed job queues for resilient asynchronous task execution and background workflows.
-
-6. **Web Dashboard & REST API**:
-   - Complete front-end user interface with real-time analytics, company profile management, and interactive agent chats.
-   - Clean Node.js HTTP REST API backend.
 
 ---
 
@@ -38,26 +46,37 @@ Autonomous AI Marketing & Operations Operating System. FoundryOS coordinates spe
 
 ```
 FoundryOs/
+├── client/                     # Modern React + Vite frontend workspace
+│   ├── src/
+│   │   ├── components/         # Workspace, Approvals, Brain, Employees, Analytics
+│   │   ├── context/            # Global AppContext and state management
+│   │   ├── types/              # TypeScript interface definitions
+│   │   └── utils/              # Output formatting & PDF generation
+│   ├── public/                 # Static assets & logos
+│   └── vite.config.ts          # Vite build & proxy configuration
 ├── src/
 │   ├── index.ts                # Application startup entry point
 │   ├── server.ts               # Server entry export
 │   ├── backend/
 │   │   ├── agents/             # Agent runner & workflow execution logic
-│   │   ├── config/             # Zod-validated environment config
+│   │   ├── config/             # Zod-validated environment config & demo profiles
+│   │   ├── credits/            # Token tracking & credit calculation services
+│   │   ├── documents/          # Document archive store & PDF generator
 │   │   ├── employees/          # Employee persona catalog & prompts
 │   │   ├── errors/             # Custom domain error hierarchies
-│   │   ├── flows/              # Multi-step business flows & pipelines
+│   │   ├── hitl/               # Human-In-The-Loop approval lifecycle service
+│   │   ├── integrations/       # Slack, Google Drive, and API key management
+│   │   ├── mcp/                # Model Context Protocol client & server handlers
 │   │   ├── models/             # LLM client interface, OpenAI, Ollama & resolver
+│   │   ├── plugins/            # Extensible tool registry & plugins
 │   │   ├── queue/              # BullMQ queue managers & worker jobs
 │   │   ├── routes/             # REST API routers & endpoint handlers
-│   │   ├── server.ts           # HTTP server & static file server
-│   │   └── shared/             # Logging (structured JSON), retry & utilities
-│   ├── brain/                  # RAG context builder & semantic search
+│   │   └── server.ts           # HTTP server & static bundle provider
+│   ├── brain/                  # RAG context builder & semantic vector store
 │   ├── databases/              # PostgreSQL client, schema.sql & migrations
 │   └── trueforge/              # TrueForge agent session & turn services
-├── frontend/                   # UI assets (HTML, CSS, JS)
-├── public/                     # Public static files served by server
-├── tests/                      # Vitest test suites (14 suites, 73+ tests)
+├── public/                     # Compiled production UI bundle served by Express
+├── tests/                      # Vitest test suites (agents, credits, mcp, flows)
 ├── .env.example                # Environment variable configuration template
 ├── package.json
 └── tsconfig.json
@@ -91,6 +110,7 @@ FoundryOs/
 2. **Install dependencies**:
    ```bash
    npm install
+   cd client && npm install && cd ..
    ```
 
 3. **Configure Environment Variables**:
@@ -127,13 +147,14 @@ FoundryOs/
 
 | Script | Command | Description |
 |---|---|---|
-| **Build** | `npm run build` | Compiles TypeScript into `dist/` |
-| **Typecheck** | `npm run typecheck` | Validates TypeScript types without emitting files |
-| **Test** | `npm test` | Runs all Vitest test suites once |
+| **Build Full System** | `npm run build:all` | Compiles backend TypeScript and builds the production React bundle into `public/` |
+| **Build Backend** | `npm run build` | Compiles backend TypeScript into `dist/` |
+| **Build Client** | `npm run build:client` | Builds Vite client production bundle |
+| **Dev Client** | `npm run dev:client` | Runs Vite frontend with live Hot Module Replacement |
+| **Start Server** | `npm run serve` | Builds and serves the unified API & Dashboard on port 3000 |
+| **Test** | `npm test` | Runs all Vitest test suites |
 | **Test Watch** | `npm run test:watch` | Runs Vitest in interactive watch mode |
-| **Start Server** | `npm run serve` | Builds project and starts the HTTP server & UI on port 3000 |
-| **Start CLI** | `npm start` | Runs the initialization and connectivity check cycle |
-| **Start Dev** | `npm run start:dev` | Compiles and runs the CLI initialization cycle |
+| **Typecheck** | `npm run typecheck` | Validates TypeScript types across the backend |
 
 ---
 
@@ -145,13 +166,11 @@ FoundryOS uses Vitest for unit and integration testing. Run:
 npm test
 ```
 
-All 14 test suites cover:
-- Environment configuration & schema validation
-- Custom error handling & logging
-- PostgreSQL connection resilience
-- Context Builder token budgeting
+Test suites cover:
+- Agent execution pipeline & routing
+- Context Builder token budgeting & memory vectors
+- Model Context Protocol (MCP) tool registrations
+- Human-In-The-Loop approval workflows
+- Token & credit quota limits
 - TrueForge agent session lifecycles
-- OpenAI & Ollama completions & embeddings
-- BullMQ queue & worker execution
-- Agent Router (heuristic + model routing)
-- End-to-end execution flows
+- Multi-document upload & PDF deliverable compilation
