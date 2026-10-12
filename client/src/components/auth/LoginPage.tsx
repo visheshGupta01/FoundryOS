@@ -63,7 +63,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     return (
         <div className="auth-page">
             <div className="auth-card">
-                <div className="auth-brand">FOUND<span>RY</span>OS</div>
+                <div className="auth-brand">Foundry<span>OS</span></div>
                 <h1>{isSignup ? 'Create your account' : 'Welcome back'}</h1>
                 <p className="auth-subtitle">
                     {isSignup ? 'Create an account to start using your workspace.' : 'Sign in to continue to your workspace.'}
