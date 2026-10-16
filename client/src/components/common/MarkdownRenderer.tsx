@@ -7,6 +7,7 @@ interface MarkdownRendererProps {
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
 
   const handleCopyCode = async (codeText: string, index: number) => {
     try {
@@ -37,8 +38,20 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         continue;
       }
 
-      // Match bold: **text**
-      const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
+      // Match bold italic: ***text*** or ___text___
+      const boldItalicMatch = remaining.match(/^\*\*\*([^*]+)\*\*\*/) || remaining.match(/^___([^_]+)___/);
+      if (boldItalicMatch) {
+        tokens.push(
+          <strong key={`bolditalic-${keyIdx++}`} style={styles.boldText}>
+            <em style={styles.italicText}>{boldItalicMatch[1]}</em>
+          </strong>
+        );
+        remaining = remaining.slice(boldItalicMatch[0].length);
+        continue;
+      }
+
+      // Match bold: **text** or __text__
+      const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/) || remaining.match(/^__([^_]+)__/);
       if (boldMatch) {
         tokens.push(
           <strong key={`bold-${keyIdx++}`} style={styles.boldText}>
@@ -46,6 +59,18 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
           </strong>
         );
         remaining = remaining.slice(boldMatch[0].length);
+        continue;
+      }
+
+      // Match strikethrough: ~~text~~
+      const strikeMatch = remaining.match(/^~~([^~]+)~~/);
+      if (strikeMatch) {
+        tokens.push(
+          <del key={`del-${keyIdx++}`} style={styles.strikeText}>
+            {strikeMatch[1]}
+          </del>
+        );
+        remaining = remaining.slice(strikeMatch[0].length);
         continue;
       }
 
@@ -58,6 +83,26 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
           </em>
         );
         remaining = remaining.slice(italicMatch[0].length);
+        continue;
+      }
+
+      // Match markdown image: ![alt](url)
+      const imageMatch = remaining.match(/^!\[([^\]]*)\]\((data:image\/[^;]+;base64,[A-Za-z0-9+/=]+|https?:\/\/[^\s)]+|[^\s)]+)\)/);
+      if (imageMatch) {
+        const altText = imageMatch[1] || 'Visual';
+        const imgUrl = imageMatch[2] || '';
+        tokens.push(
+          <span
+            key={`img-inline-${keyIdx++}`}
+            style={styles.inlineImageCard}
+            onClick={() => setSelectedImage({ url: imgUrl, alt: altText })}
+            title="Click to zoom visual"
+          >
+            <img src={imgUrl} alt={altText} loading="lazy" style={styles.inlineImg} />
+            {altText && <span style={styles.inlineImgCaption}>{altText}</span>}
+          </span>
+        );
+        remaining = remaining.slice(imageMatch[0].length);
         continue;
       }
 
@@ -80,7 +125,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
       }
 
       // Plain character
-      const nextSpecial = remaining.search(/[`*_[\]]/);
+      const nextSpecial = remaining.search(/[`*_~[\]!]/);
       if (nextSpecial === -1) {
         tokens.push(remaining);
         break;
@@ -105,6 +150,37 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
 
     while (i < rawLines.length) {
       const line = rawLines[i] ?? '';
+      const trimmed = line.trim();
+
+      // Image Block: ![alt](url)
+      const imgBlockMatch = trimmed.match(/^!\[([^\]]*)\]\((.+)\)$/);
+      if (imgBlockMatch) {
+        const altText = imgBlockMatch[1] || 'Visual Deliverable & Architecture';
+        const imgUrl = imgBlockMatch[2] || '';
+        elements.push(
+          <div key={`img-block-${blockKey++}`} style={styles.imageBlockWrapper}>
+            <div
+              style={styles.imageCard}
+              onClick={() => setSelectedImage({ url: imgUrl, alt: altText })}
+              title="Click to view full resolution visual"
+            >
+              <img
+                src={imgUrl}
+                alt={altText}
+                loading="lazy"
+                style={styles.imageBlock}
+              />
+              <div style={styles.imageHoverOverlay}>
+                <Icons.Search size={14} style={{ color: '#ffffff' }} />
+                <span>Enlarge Visual Deliverable</span>
+              </div>
+            </div>
+            {altText && <div style={styles.imageCaption}>{altText}</div>}
+          </div>
+        );
+        i++;
+        continue;
+      }
 
       // 1. Fenced Code Block
       if (line.trim().startsWith('```')) {
@@ -229,40 +305,86 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         continue;
       }
 
-      // 4. Headings
-      if (line.startsWith('#### ')) {
-        elements.push(<h5 key={`h4-${blockKey++}`} style={styles.h4}>{renderInline(line.replace('#### ', ''))}</h5>);
-        i++;
-        continue;
-      }
-      if (line.startsWith('### ')) {
-        elements.push(<h4 key={`h3-${blockKey++}`} style={styles.h3}>{renderInline(line.replace('### ', ''))}</h4>);
-        i++;
-        continue;
-      }
-      if (line.startsWith('## ')) {
-        elements.push(<h3 key={`h2-${blockKey++}`} style={styles.h2}>{renderInline(line.replace('## ', ''))}</h3>);
-        i++;
-        continue;
-      }
-      if (line.startsWith('# ')) {
-        elements.push(<h2 key={`h1-${blockKey++}`} style={styles.h1}>{renderInline(line.replace('# ', ''))}</h2>);
+      // 4. Horizontal Rule (---, ***, ___)
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) {
+        elements.push(<hr key={`hr-${blockKey++}`} style={styles.hr} />);
         i++;
         continue;
       }
 
-      // 5. Unordered List Items
-      if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-        const listItems: string[] = [];
-        while (i < rawLines.length && (rawLines[i]!.trim().startsWith('- ') || rawLines[i]!.trim().startsWith('* '))) {
-          listItems.push(rawLines[i]!.trim().replace(/^[-*]\s+/, ''));
+      // 5. Headings (H1 to H6)
+      const headingMatch = line.trim().match(/^(#{1,6})\s+(.+?)(?:\s+#+)?$/);
+      if (headingMatch && headingMatch[1] && headingMatch[2]) {
+        const level = headingMatch[1].length;
+        const headingText = headingMatch[2];
+        const headingStyle = (styles[`h${level}`] || styles.h4) as React.CSSProperties;
+
+        switch (level) {
+          case 1:
+            elements.push(<h1 key={`h1-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h1>);
+            break;
+          case 2:
+            elements.push(<h2 key={`h2-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h2>);
+            break;
+          case 3:
+            elements.push(<h3 key={`h3-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h3>);
+            break;
+          case 4:
+            elements.push(<h4 key={`h4-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h4>);
+            break;
+          case 5:
+            elements.push(<h5 key={`h5-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h5>);
+            break;
+          case 6:
+          default:
+            elements.push(<h6 key={`h6-${blockKey++}`} style={headingStyle}>{renderInline(headingText)}</h6>);
+            break;
+        }
+        i++;
+        continue;
+      }
+
+      // 6. Unordered List Items (-, *, +, and Unicode bullets)
+      const isUnordered = (str: string) => /^[-*+•\u2022]\s+/.test(str.trim());
+      if (isUnordered(line)) {
+        const listItems: { text: string; indent: number; isTask: boolean; checked: boolean }[] = [];
+        while (i < rawLines.length && isUnordered(rawLines[i]!)) {
+          const currentLine = rawLines[i]!;
+          const leadingSpaces = currentLine.search(/\S/);
+          const indent = leadingSpaces > 0 ? Math.floor(leadingSpaces / 2) : 0;
+          let itemText = currentLine.trim().replace(/^[-*+•\u2022]\s+/, '');
+          
+          let isTask = false;
+          let checked = false;
+          if (/^\[([ xX])\]\s+/.test(itemText)) {
+            isTask = true;
+            checked = /^\[[xX]\]/.test(itemText);
+            itemText = itemText.replace(/^\[([ xX])\]\s+/, '');
+          }
+
+          listItems.push({ text: itemText, indent, isTask, checked });
           i++;
         }
         elements.push(
           <ul key={`ul-${blockKey++}`} style={styles.ul}>
             {listItems.map((item, lIdx) => (
-              <li key={lIdx} style={styles.li}>
-                {renderInline(item)}
+              <li
+                key={lIdx}
+                style={{
+                  ...styles.li,
+                  ...(item.indent > 0 ? { marginLeft: `${item.indent * 16}px`, listStyleType: item.indent % 2 === 1 ? 'circle' : 'square' } : {}),
+                  ...(item.isTask ? { listStyleType: 'none', marginLeft: item.indent > 0 ? `${item.indent * 16}px` : 0 } : {})
+                }}
+              >
+                {item.isTask && (
+                  <input
+                    type="checkbox"
+                    readOnly
+                    checked={item.checked}
+                    style={styles.checkbox}
+                  />
+                )}
+                {renderInline(item.text)}
               </li>
             ))}
           </ul>
@@ -270,18 +392,31 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         continue;
       }
 
-      // 6. Ordered List Items
-      if (/^\d+\.\s+/.test(line.trim())) {
-        const listItems: string[] = [];
-        while (i < rawLines.length && /^\d+\.\s+/.test(rawLines[i]!.trim())) {
-          listItems.push(rawLines[i]!.trim().replace(/^\d+\.\s+/, ''));
+      // 7. Ordered List Items
+      const isOrdered = (str: string) => /^\d+\.\s+/.test(str.trim());
+      if (isOrdered(line)) {
+        const listItems: { text: string; indent: number }[] = [];
+        while (i < rawLines.length && isOrdered(rawLines[i]!)) {
+          const currentLine = rawLines[i]!;
+          const leadingSpaces = currentLine.search(/\S/);
+          const indent = leadingSpaces > 0 ? Math.floor(leadingSpaces / 2) : 0;
+          listItems.push({
+            text: currentLine.trim().replace(/^\d+\.\s+/, ''),
+            indent
+          });
           i++;
         }
         elements.push(
           <ol key={`ol-${blockKey++}`} style={styles.ol}>
             {listItems.map((item, lIdx) => (
-              <li key={lIdx} style={styles.li}>
-                {renderInline(item)}
+              <li
+                key={lIdx}
+                style={{
+                  ...styles.li,
+                  ...(item.indent > 0 ? { marginLeft: `${item.indent * 16}px` } : {})
+                }}
+              >
+                {renderInline(item.text)}
               </li>
             ))}
           </ol>
@@ -289,14 +424,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         continue;
       }
 
-      // 7. Empty line spacing
+      // 8. Empty line spacing
       if (line.trim().length === 0) {
         elements.push(<div key={`sp-${blockKey++}`} style={{ height: '8px' }} />);
         i++;
         continue;
       }
 
-      // 8. Standard Paragraph
+      // 9. Standard Paragraph
       elements.push(
         <p key={`p-${blockKey++}`} style={styles.paragraph}>
           {renderInline(line)}
@@ -308,7 +443,29 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
     return elements;
   };
 
-  return <div style={styles.container}>{renderBlocks()}</div>;
+  return (
+    <div style={styles.container}>
+      {renderBlocks()}
+      {selectedImage && (
+        <div style={styles.lightboxBackdrop} onClick={() => setSelectedImage(null)}>
+          <div style={styles.lightboxModal} onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              style={styles.lightboxCloseBtn}
+              onClick={() => setSelectedImage(null)}
+              title="Close modal"
+            >
+              ✕
+            </button>
+            <img src={selectedImage.url} alt={selectedImage.alt} style={styles.lightboxImg} />
+            {selectedImage.alt && (
+              <div style={styles.lightboxCaption}>{selectedImage.alt}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -347,6 +504,36 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
     marginTop: '10px',
     marginBottom: '4px'
+  },
+  h5: {
+    fontSize: '0.90rem',
+    fontWeight: 600,
+    color: '#e2e8f0',
+    marginTop: '8px',
+    marginBottom: '4px'
+  },
+  h6: {
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: 'var(--text-tertiary, #94a3b8)',
+    marginTop: '6px',
+    marginBottom: '2px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  hr: {
+    border: 'none',
+    borderTop: '1px solid var(--glass-border-subtle, rgba(255, 255, 255, 0.1))',
+    margin: '14px 0'
+  },
+  checkbox: {
+    marginRight: '6px',
+    verticalAlign: 'middle',
+    accentColor: 'var(--apple-accent, #3b82f6)'
+  },
+  strikeText: {
+    textDecoration: 'line-through',
+    opacity: 0.7
   },
   paragraph: {
     margin: '4px 0',
@@ -475,5 +662,122 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '4px 0',
     color: 'var(--text-secondary)',
     lineHeight: 1.55
+  },
+  imageBlockWrapper: {
+    margin: '18px 0',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%'
+  },
+  imageCard: {
+    position: 'relative',
+    maxWidth: '100%',
+    width: '100%',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    background: '#0d0e12',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, border-color 0.2s ease'
+  },
+  imageBlock: {
+    width: '100%',
+    height: 'auto',
+    display: 'block'
+  },
+  imageHoverOverlay: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 10px',
+    background: 'rgba(0, 0, 0, 0.65)',
+    backdropFilter: 'blur(8px)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '20px',
+    fontSize: '0.74rem',
+    color: '#ffffff',
+    fontWeight: 500,
+    pointerEvents: 'none'
+  },
+  imageCaption: {
+    marginTop: '8px',
+    fontSize: '0.78rem',
+    color: 'var(--text-tertiary)',
+    textAlign: 'center',
+    fontStyle: 'italic'
+  },
+  inlineImageCard: {
+    display: 'inline-block',
+    margin: '4px 6px',
+    verticalAlign: 'middle',
+    cursor: 'pointer'
+  },
+  inlineImg: {
+    maxHeight: '180px',
+    borderRadius: '8px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  inlineImgCaption: {
+    display: 'block',
+    fontSize: '0.72rem',
+    color: 'var(--text-tertiary)',
+    textAlign: 'center'
+  },
+  lightboxBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0, 0, 0, 0.85)',
+    backdropFilter: 'blur(10px)',
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    animation: 'fadeIn 0.2s ease'
+  },
+  lightboxModal: {
+    position: 'relative',
+    maxWidth: '92vw',
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  lightboxCloseBtn: {
+    position: 'absolute',
+    top: '-38px',
+    right: '0',
+    background: 'rgba(255, 255, 255, 0.15)',
+    border: '1px solid rgba(255, 255, 255, 0.25)',
+    borderRadius: '50%',
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#ffffff',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    transition: 'background 0.2s ease'
+  },
+  lightboxImg: {
+    maxWidth: '100%',
+    maxHeight: '82vh',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.18)',
+    boxShadow: '0 24px 64px rgba(0, 0, 0, 0.6)',
+    objectFit: 'contain'
+  },
+  lightboxCaption: {
+    marginTop: '12px',
+    fontSize: '0.86rem',
+    color: '#e4e4e7',
+    fontWeight: 500,
+    textAlign: 'center'
   }
 };

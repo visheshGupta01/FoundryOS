@@ -96,7 +96,7 @@ export const SavedReportsView: React.FC = () => {
           type="text"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          placeholder="Filter documents..."
+          placeholder=""
           style={styles.filterInput}
         />
       </div>
@@ -242,7 +242,7 @@ export const SavedReportsView: React.FC = () => {
                 required
                 value={uploadTitle}
                 onChange={e => setUploadTitle(e.target.value)}
-                placeholder="e.g. Q4 Growth & Content Strategy"
+                placeholder=""
                 style={styles.input}
               />
             </div>
@@ -253,7 +253,7 @@ export const SavedReportsView: React.FC = () => {
                 type="text"
                 value={uploadFileName}
                 onChange={e => setUploadFileName(e.target.value)}
-                placeholder="e.g. Q4_Growth_Strategy.md"
+                placeholder=""
                 style={styles.input}
               />
             </div>
@@ -265,7 +265,7 @@ export const SavedReportsView: React.FC = () => {
                 rows={8}
                 value={uploadContent}
                 onChange={e => setUploadContent(e.target.value)}
-                placeholder="Paste document text or markdown strategy here..."
+                placeholder=""
                 style={styles.textarea}
               />
             </div>

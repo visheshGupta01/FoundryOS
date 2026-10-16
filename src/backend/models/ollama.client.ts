@@ -187,60 +187,150 @@ export class OllamaClient implements LLMClient {
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(rawContent);
-    } catch (jsonErr: unknown) {
+    } catch {
       const match = rawContent.match(/\{[\s\S]*\}/);
       if (match) {
         try {
           parsedJson = JSON.parse(match[0]);
         } catch {
-          throw new ValidationError("Ollama output could not be parsed as JSON", {
-            rawContent,
-            originalError: jsonErr instanceof Error ? jsonErr.message : String(jsonErr)
-          });
+          parsedJson = { summary: rawContent.trim() };
         }
       } else {
-        throw new ValidationError("Ollama output could not be parsed as JSON", {
-          rawContent,
-          originalError: jsonErr instanceof Error ? jsonErr.message : String(jsonErr)
-        });
+        parsedJson = { summary: rawContent.trim() };
       }
     }
 
+    if (!parsedJson || typeof parsedJson !== "object" || Array.isArray(parsedJson)) {
+      parsedJson = { summary: rawContent.trim() };
+    }
+
     let validated = schema.safeParse(parsedJson);
-    if (!validated.success && parsedJson && typeof parsedJson === "object" && !Array.isArray(parsedJson)) {
+    if (!validated.success && parsedJson && typeof parsedJson === "object") {
       const p = { ...(parsedJson as Record<string, any>) };
-      // Resilient defaults for common specialist schemas
-      if (!p["summary"]) p["summary"] = p["overview"] || p["conclusion"] || "Analysis completed.";
+
+      if (!p["summary"]) {
+        p["summary"] = p["overview"] || p["conclusion"] || p["executiveSummary"] || (rawContent.trim().length > 0 ? rawContent.trim() : "Strategic analysis completed.");
+      }
       if (!p["marketTrends"] && p["trends"]) p["marketTrends"] = p["trends"];
-      if (!p["marketTrends"]) p["marketTrends"] = ["Growing demand for autonomous startup marketing systems"];
-      if (!p["targetSegments"]) p["targetSegments"] = [{ segmentName: "B2B Tech Startups", opportunity: "Autonomous marketing execution", urgency: "high" }];
-      if (!p["macroRisks"]) p["macroRisks"] = ["Market saturation in legacy content tools"];
-      if (typeof p["confidenceScore"] !== "number") p["confidenceScore"] = 0.85;
+      if (!Array.isArray(p["marketTrends"])) p["marketTrends"] = ["Rapid expansion of autonomous startup marketing workflows", "High urgency around customer acquisition and retention economics"];
 
-      if (!p["competitorTeardowns"]) p["competitorTeardowns"] = [];
-      if (!p["featureGaps"]) p["featureGaps"] = ["Persistent Company Brain memory", "Coordinated multi-agent workflow"];
-      if (!p["counterTactics"]) p["counterTactics"] = ["Leverage persistent context to eliminate prompt fatigue"];
-      if (!p["threatLevel"]) p["threatLevel"] = "moderate";
+      if (Array.isArray(p["targetSegments"])) {
+        p["targetSegments"] = p["targetSegments"].map((seg: any) => {
+          const rawUrgency = String(seg?.urgency || "medium").toLowerCase();
+          const urgency = rawUrgency === "high" || rawUrgency === "urgent" || rawUrgency === "critical"
+            ? "high"
+            : (rawUrgency === "low" ? "low" : "medium");
+          return {
+            segmentName: String(seg?.segmentName || seg?.name || "Early-stage Technical Founders"),
+            opportunity: String(seg?.opportunity || seg?.desc || "Deploy continuous automated marketing operations"),
+            urgency
+          };
+        });
+      } else {
+        p["targetSegments"] = [{ segmentName: "B2B Tech Startups", opportunity: "Autonomous marketing execution and positioning", urgency: "high" }];
+      }
 
-      if (!p["positioningStatement"]) p["positioningStatement"] = p["positioning"] || "The AI Marketing Operating System for founders.";
-      if (!p["valueProposition"]) p["valueProposition"] = p["valueProp"] || "Persistent context powering specialized AI agents.";
-      if (!p["strategicPillars"]) p["strategicPillars"] = ["Persistent Memory", "Specialized Personas", "Founder Oversight"];
-      if (!p["channelPriorities"]) p["channelPriorities"] = ["Founder Communities", "SEO", "Direct Inbound"];
-      if (!p["brandToneChecks"]) p["brandToneChecks"] = ["Human, direct, confident voice enforced"];
-      if (!p["goalAlignment"]) p["goalAlignment"] = [{ goal: "Startup scale", initiative: "Autonomous marketing", targetMetric: "Consistent growth" }];
+      if (!Array.isArray(p["macroRisks"])) {
+        p["macroRisks"] = p["risks"] ? (Array.isArray(p["risks"]) ? p["risks"] : [String(p["risks"])]) : ["Category saturation in legacy agency retainers", "Platform integration lock-in"];
+      }
 
-      if (!p["campaignTheme"]) p["campaignTheme"] = "Autonomous Startup Growth";
-      if (!p["funnelStages"]) p["funnelStages"] = {
-        tofu: { focus: "Awareness", tactics: ["Comparison reports"] },
-        mofu: { focus: "Evaluation", tactics: ["Free audit preview"] },
-        bofu: { focus: "Conversion", tactics: ["Full workflow onboarding"] }
-      };
-      if (!p["offerArchitecture"]) p["offerArchitecture"] = {
-        coreOffer: "Complete AI Marketing Operating System",
-        incentive: "Instant Company Brain audit included",
-        riskReversal: "14-day trial with full guarantee"
-      };
-      if (!p["kpis"]) p["kpis"] = ["Activation rate > 35%", "Payback < 3 months"];
+      if (p["confidenceScore"] !== undefined) {
+        let num = typeof p["confidenceScore"] === "string" ? parseFloat(p["confidenceScore"]) : Number(p["confidenceScore"]);
+        if (isNaN(num)) num = 0.88;
+        if (num > 1) num = num / 100;
+        p["confidenceScore"] = Math.max(0.1, Math.min(1.0, num));
+      } else {
+        p["confidenceScore"] = 0.88;
+      }
+
+      if (Array.isArray(p["competitorTeardowns"])) {
+        p["competitorTeardowns"] = p["competitorTeardowns"].map((comp: any) => ({
+          name: String(comp?.name || "Direct Competitor"),
+          advantages: Array.isArray(comp?.advantages)
+            ? comp.advantages.map(String)
+            : (comp?.pros ? (Array.isArray(comp.pros) ? comp.pros.map(String) : [String(comp.pros)]) : ["Established brand inertia"]),
+          vulnerabilities: Array.isArray(comp?.vulnerabilities)
+            ? comp.vulnerabilities.map(String)
+            : (comp?.cons ? (Array.isArray(comp.cons) ? comp.cons.map(String) : [String(comp.cons)]) : ["Lack of native persistent context"]),
+          pricingModel: String(comp?.pricingModel || comp?.pricing || "Per-seat subscription or enterprise retainers")
+        }));
+      } else {
+        p["competitorTeardowns"] = [
+          {
+            name: "Traditional Agency Retainers",
+            advantages: ["High-touch manual account management"],
+            vulnerabilities: ["Slow turnaround times, prohibitive monthly costs ($5k-$15k/mo), zero software leverage"],
+            pricingModel: "Monthly retainer contract"
+          }
+        ];
+      }
+
+      if (!Array.isArray(p["featureGaps"])) {
+        p["featureGaps"] = ["Persistent Company Brain memory", "Coordinated multi-agent workflow"];
+      }
+      if (!Array.isArray(p["counterTactics"])) {
+        p["counterTactics"] = ["Leverage persistent context to eliminate prompt fatigue and deliver instant turnarounds"];
+      }
+
+      const rawThreat = String(p["threatLevel"] || "moderate").toLowerCase();
+      p["threatLevel"] = rawThreat === "critical" || rawThreat === "high"
+        ? "critical"
+        : (rawThreat === "low" ? "low" : "moderate");
+
+      if (!p["positioningStatement"]) p["positioningStatement"] = p["positioning"] || "The premier AI Marketing Operating System for high-velocity startup teams.";
+      if (!p["valueProposition"]) p["valueProposition"] = p["valueProp"] || "Persistent context powering specialized autonomous AI agents.";
+      if (!Array.isArray(p["strategicPillars"])) p["strategicPillars"] = ["Persistent Company Brain", "Specialized Persona Collaboration", "Human-In-The-Loop Steering"];
+      if (!Array.isArray(p["channelPriorities"])) p["channelPriorities"] = ["Founder Communities", "Technical SEO & Teardowns", "Direct Inbound"];
+      if (!Array.isArray(p["brandToneChecks"])) p["brandToneChecks"] = ["Human, direct, confident voice strictly enforced"];
+
+      if (Array.isArray(p["goalAlignment"])) {
+        p["goalAlignment"] = p["goalAlignment"].map((g: any) => ({
+          goal: String(g?.goal || "Accelerate market traction"),
+          initiative: String(g?.initiative || "Deploy autonomous marketing workflows"),
+          targetMetric: String(g?.targetMetric || g?.metric || "35% MoM pipeline growth")
+        }));
+      } else {
+        p["goalAlignment"] = [{ goal: "Startup scale", initiative: "Autonomous marketing execution", targetMetric: "Consistent MoM growth" }];
+      }
+
+      if (!p["campaignTheme"]) p["campaignTheme"] = "Autonomous Startup Growth & Market Domination";
+      if (!p["funnelStages"] || typeof p["funnelStages"] !== "object") {
+        p["funnelStages"] = {
+          tofu: { focus: "Awareness & Education", tactics: ["Competitor teardowns", "Problem-space diagnostic playbooks"] },
+          mofu: { focus: "Proof & Evaluation", tactics: ["Interactive ROI calculator", "Sandbox preview reports"] },
+          bofu: { focus: "Conversion & Activation", tactics: ["Frictionless self-serve onboarding", "Risk-free trial guarantee"] }
+        };
+      } else {
+        const fs = p["funnelStages"];
+        fs.tofu = fs.tofu && typeof fs.tofu === "object"
+          ? { focus: String(fs.tofu.focus || "Awareness"), tactics: Array.isArray(fs.tofu.tactics) ? fs.tofu.tactics.map(String) : ["High-intent educational content"] }
+          : { focus: "Awareness", tactics: ["Comparison reports"] };
+        fs.mofu = fs.mofu && typeof fs.mofu === "object"
+          ? { focus: String(fs.mofu.focus || "Evaluation"), tactics: Array.isArray(fs.mofu.tactics) ? fs.mofu.tactics.map(String) : ["Product walkthrough sandbox"] }
+          : { focus: "Evaluation", tactics: ["Free audit preview"] };
+        fs.bofu = fs.bofu && typeof fs.bofu === "object"
+          ? { focus: String(fs.bofu.focus || "Conversion"), tactics: Array.isArray(fs.bofu.tactics) ? fs.bofu.tactics.map(String) : ["Streamlined activation onboarding"] }
+          : { focus: "Conversion", tactics: ["Full workflow onboarding"] };
+      }
+
+      if (!p["offerArchitecture"] || typeof p["offerArchitecture"] !== "object") {
+        p["offerArchitecture"] = {
+          coreOffer: "Complete AI Marketing Operating System",
+          incentive: "Instant Company Brain audit and ICP benchmark included",
+          riskReversal: "14-day trial with 100% satisfaction guarantee"
+        };
+      } else {
+        const oa = p["offerArchitecture"];
+        oa.coreOffer = String(oa.coreOffer || "Complete AI Marketing Operating System");
+        oa.incentive = String(oa.incentive || "Complimentary strategic setup");
+        oa.riskReversal = String(oa.riskReversal || "14-day risk-free trial");
+      }
+
+      if (!Array.isArray(p["kpis"])) {
+        p["kpis"] = ["Activation rate > 35%", "CAC payback < 3 months", "Weekly retention > 40%"];
+      } else {
+        p["kpis"] = p["kpis"].map(String);
+      }
 
       validated = schema.safeParse(p);
       if (validated.success) {

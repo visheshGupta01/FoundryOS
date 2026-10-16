@@ -23,6 +23,7 @@ export const AgentSelectorBar: React.FC = () => {
             <button
               key={agent.id}
               onClick={() => setSelectedAgentId(agent.id)}
+              className="dashboard-card-interactive"
               style={{
                 ...styles.agentBtn,
                 ...(isSelected ? styles.agentBtnSelected : {})

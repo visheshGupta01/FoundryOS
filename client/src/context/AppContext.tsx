@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type {
   ViewType,
+  SettingsSectionType,
   CreditStatus,
   Employee,
   AttachedDocument,
@@ -58,13 +59,14 @@ interface AppContextValue {
   setIsArtifactModalOpen: (open: boolean) => void;
   isOnboardingOpen: boolean;
   setIsOnboardingOpen: (open: boolean) => void;
-  isSettingsOpen: boolean;
-  setIsSettingsOpen: (open: boolean) => void;
+  settingsSection: SettingsSectionType;
+  setSettingsSection: (section: SettingsSectionType) => void;
   mcpServers: McpServerInfo[];
   tools: ToolDefinition[];
   refreshMcp: () => Promise<void>;
   executeAgentRun: (promptText: string, agentOverride?: string) => Promise<void>;
   recentChats: ChatSession[];
+  currentSessionId: string | null;
   loadChatSession: (sessionId: string) => void;
   deleteChatSession: (sessionId: string) => void;
   clearAllRecentChats: () => void;
@@ -106,17 +108,19 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const DEFAULT_BRAIN_DATA: BrainData = {
-  name: 'Acme AI',
-  website: 'https://acme.ai',
-  oneLiner: 'Autonomous AI workflow orchestrator for modern engineering and growth teams.',
-  audience: 'Early to growth stage tech founders, CTOs, and Product Leaders',
-  problem: 'Founders waste 60% of their operational cycles coordinating cross-functional context and manual growth experiments.',
-  competitors: 'Traditional agency retainers, Zapier, manual spreadsheets',
-  tone: 'Confident, authoritative, deeply human, data-backed',
-  avoidTone: 'Corporate fluff, buzzword bingo, aggressive sales jargon',
-  pricing: '$99/month Pro tier, $499/month Growth tier',
-  goal: 'Reach $1M ARR in 12 months through organic inbound and developer evangelism'
+  name: '',
+  website: '',
+  oneLiner: '',
+  audience: '',
+  problem: '',
+  competitors: '',
+  tone: '',
+  avoidTone: '',
+  pricing: '',
+  goal: ''
 };
+
+const DEFAULT_RECENT_CHATS: ChatSession[] = [];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -142,21 +146,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   });
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSectionType>('general');
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([]);
   const [tools, setTools] = useState<ToolDefinition[]>([]);
   const [archivedDocuments, setArchivedDocuments] = useState<ArchivedDocumentItem[]>([]);
   const [approvals, setApprovals] = useState<HitlApprovalDetail[]>([]);
   const [demoProfiles, setDemoProfiles] = useState<StartupProfile[]>([]);
-  const [activeProfileId, setActiveProfileId] = useState<string>('foundry-os');
+  const [activeProfileId, setActiveProfileId] = useState<string>('');
 
   // Persistent Recent Chats
   const [recentChats, setRecentChats] = useState<ChatSession[]>(() => {
     try {
       const saved = localStorage.getItem('foundry_recent_chats');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Filter out legacy dummy placeholder chats
+          return parsed.filter(c => !c.id.startsWith('chat-hdlc') && !c.id.startsWith('chat-booths') && !c.id.startsWith('chat-avr') && !c.id.startsWith('chat-shoreline') && !c.id.startsWith('chat-song') && !c.id.startsWith('chat-network') && !c.id.startsWith('chat-sketch') && !c.id.startsWith('chat-session-plan') && !c.id.startsWith('chat-aesthetic') && !c.id.startsWith('chat-insta') && !c.id.startsWith('chat-assignment') && !c.id.startsWith('chat-backend-1'));
+        }
+      }
+      return DEFAULT_RECENT_CHATS;
     } catch {
-      return [];
+      return DEFAULT_RECENT_CHATS;
     }
   });
 
@@ -352,25 +363,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('foundryos_integrations_v1', JSON.stringify(nextConfig));
     } catch {}
 
-    if (id === 'slack') {
-      try {
-        await fetch('/api/integrations/slack', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ botToken: apiKey, defaultChannel: secondaryValue || '#marketing', tenantId: 'default-tenant' })
-        });
-        await refreshIntegrations();
-      } catch {}
-    } else if (id === 'drive') {
-      try {
-        await fetch('/api/integrations/drive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: apiKey, folderName: secondaryValue || 'FoundryOS Documents', tenantId: 'default-tenant' })
-        });
-        await refreshIntegrations();
-      } catch {}
-    }
+    try {
+      await fetch(`/api/integrations/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          botToken: apiKey,
+          accessToken: apiKey,
+          secondaryValue,
+          defaultChannel: secondaryValue || '#marketing',
+          folderName: secondaryValue || 'FoundryOS Documents',
+          tenantId: 'default-tenant'
+        })
+      });
+      await refreshIntegrations();
+    } catch {}
+
     return { success: true, message: `Connected successfully.` };
   }, [integrationsConfig, refreshIntegrations]);
 
@@ -382,17 +391,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('foundryos_integrations_v1', JSON.stringify(nextConfig));
     } catch {}
 
-    if (id === 'slack') {
-      try {
-        await fetch('/api/integrations/slack?tenantId=default-tenant', { method: 'DELETE' });
-        await refreshIntegrations();
-      } catch {}
-    } else if (id === 'drive') {
-      try {
-        await fetch('/api/integrations/drive?tenantId=default-tenant', { method: 'DELETE' });
-        await refreshIntegrations();
-      } catch {}
-    }
+    try {
+      await fetch(`/api/integrations/${id}?tenantId=default-tenant`, { method: 'DELETE' });
+      await refreshIntegrations();
+    } catch {}
+
     return true;
   }, [integrationsConfig, refreshIntegrations]);
 
@@ -616,7 +619,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loadChatSession = useCallback((sessionId: string) => {
     const session = recentChats.find(s => s.id === sessionId);
     if (session) {
-      setMessages(session.messages || []);
+      if (session.messages && session.messages.length > 0) {
+        setMessages(session.messages);
+      } else {
+        setMessages([
+          {
+            id: `msg-${session.id}-1`,
+            sender: 'You',
+            avatar: 'YOU',
+            content: session.title,
+            isUser: true,
+            timestamp: session.createdAt
+          },
+          {
+            id: `msg-${session.id}-2`,
+            sender: session.agentName || 'FoundryOS AI',
+            avatar: 'FOS',
+            content: session.lastMessagePreview || `Session discussion for: ${session.title}`,
+            isUser: false,
+            timestamp: session.updatedAt
+          }
+        ]);
+      }
       setSelectedAgentId(session.agentId || 'auto');
       setCurrentSessionId(session.id);
       setActiveView('chat');
@@ -669,11 +693,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const brainHealth: BrainHealth = React.useMemo(() => {
     const fields = [
       { key: 'name', label: 'Company Name' },
+      { key: 'website', label: 'Website URL' },
       { key: 'oneLiner', label: 'One Liner' },
       { key: 'audience', label: 'Target Audience' },
       { key: 'problem', label: 'Core Problem' },
       { key: 'competitors', label: 'Competitors' },
-      { key: 'tone', label: 'Brand Voice' }
+      { key: 'tone', label: 'Brand Voice' },
+      { key: 'avoidTone', label: 'Negative Constraints' },
+      { key: 'pricing', label: 'Pricing Model' },
+      { key: 'goal', label: 'Primary Goal' }
     ];
     const configured: string[] = [];
     const missing: string[] = [];
@@ -685,9 +713,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         missing.push(f.label);
       }
     });
-    const completenessPercent = Math.round((configured.length / fields.length) * 100);
-    return { completenessPercent, configuredFields: configured, missingFields: missing };
-  }, [brainData]);
+
+    const docCount = archivedDocuments.length + attachedFiles.length;
+    const sessionCount = recentChats.length;
+    const artifactCount = artifacts.length;
+    const integrationsCount = connectedIntegrationsCount;
+
+    const anchorsScore = Math.min(40, configured.length * 4);
+    const docsScore = Math.min(30, docCount * 10);
+    const executionScore = Math.min(20, (sessionCount + artifactCount) * 5);
+    const integrationScore = Math.min(10, integrationsCount * 5);
+
+    const completenessPercent = Math.min(100, Math.max(0, Math.round(anchorsScore + docsScore + executionScore + integrationScore)));
+
+    let levelLabel = 'Emerging Base';
+    if (completenessPercent >= 80) levelLabel = 'Sovereign AGI';
+    else if (completenessPercent >= 55) levelLabel = 'Deeply Informed';
+    else if (completenessPercent >= 25) levelLabel = 'Context Active';
+
+    const totalSignals = configured.length + docCount + sessionCount + artifactCount + integrationsCount;
+
+    return {
+      completenessPercent,
+      configuredFields: configured,
+      missingFields: missing,
+      docCount,
+      memoryCount: sessionCount + artifactCount,
+      anchorsCount: configured.length,
+      totalSignals,
+      levelLabel
+    };
+  }, [brainData, archivedDocuments, attachedFiles, recentChats, artifacts, connectedIntegrationsCount]);
 
   const executeAgentRun = useCallback(async (promptText: string, agentOverride?: string) => {
     const targetAgentId = agentOverride || selectedAgentId;
@@ -739,7 +795,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMessage({
           sender: 'System Guardrail',
           avatar: 'SYS',
-          content: '⚠️ **Daily Credit Limit Reached (100/100 Credits Used)**.\n\nYour 80,000 daily token capacity has been reached. Allowance resets automatically at midnight UTC.',
+          content: '⚠️ **Daily Compute Capacity Reached (100% Utilized)**.\n\nYour daily multi-agent compute allowance has been fully allocated. Capacity resets automatically at midnight UTC.',
           isUser: false
         });
         await refreshCredits();
@@ -803,7 +859,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLightweight: Boolean(data.isLightweight),
         runtimeMode: data.runtimeMode,
         routedBy: data.routedBy,
-        routingReason: data.routingReason
+        routingReason: data.routingReason,
+        suggestions: data.suggestions,
+        isStreaming: true
       };
 
       if (data.creditUsage) {
@@ -878,7 +936,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     selectedOptionId?: string,
     customAnswer?: string,
     chosenOptionLabel?: string,
-    autoContinuePlan: boolean = true
+    _autoContinuePlan: boolean = false
   ): Promise<boolean> => {
     try {
       const res = await fetch('/api/hitl/decision', {
@@ -914,21 +972,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
         await refreshApprovals();
 
-        if (autoContinuePlan) {
-          if (decision === 'approve') {
-            const chosenDirective = customAnswer
-              ? `Custom Founder Direction: "${customAnswer}"`
-              : (chosenOptionLabel ? `Selected Strategy: "${chosenOptionLabel}"` : (selectedOptionId ? `Option: ${selectedOptionId}` : 'Approved direction'));
-            
-            setTimeout(() => {
-              executeAgentRun(`Proceed with building the plan based on the chosen direction: ${chosenDirective}. Synthesize the tactical milestones, specific deliverables, and immediate next action items.`);
-            }, 300);
-          } else {
-            setTimeout(() => {
-              executeAgentRun(`The previous plan direction was rejected by the founder${comment ? ` (Feedback: "${comment}")` : ''}. Re-evaluate our strategic objectives and synthesize a fresh, alternative set of directions and options to move forward.`);
-            }, 300);
-          }
-        }
+        const chosenDirective = customAnswer
+          ? `Custom Direction: "${customAnswer}"`
+          : (chosenOptionLabel ? `Selected Strategy: "${chosenOptionLabel}"` : (selectedOptionId ? `Option: ${selectedOptionId}` : 'Approved direction'));
+
+        addMessage({
+          isUser: false,
+          sender: 'Foundry Governance',
+          avatar: 'SYS',
+          content: decision === 'approve'
+            ? `Strategic direction confirmed: **${chosenDirective}**.\n\nApproval recorded. Workspace is ready for your next instruction.`
+            : `Direction rejected${comment ? `: *"${comment}"*` : ''}. Proposal cancelled.`
+        });
 
         return true;
       }
@@ -936,7 +991,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {
       return false;
     }
-  }, [refreshApprovals, executeAgentRun]);
+  }, [refreshApprovals, addMessage]);
 
   const value: AppContextValue = {
     theme,
@@ -968,13 +1023,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsArtifactModalOpen,
     isOnboardingOpen,
     setIsOnboardingOpen,
-    isSettingsOpen,
-    setIsSettingsOpen,
+    settingsSection,
+    setSettingsSection,
     mcpServers,
     tools,
     refreshMcp,
     executeAgentRun,
     recentChats,
+    currentSessionId,
     loadChatSession,
     deleteChatSession,
     clearAllRecentChats,

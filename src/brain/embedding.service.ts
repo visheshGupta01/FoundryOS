@@ -1,5 +1,5 @@
-import { env } from "../backend/config/env.js";
 import { logger } from "../backend/shared/logger.js";
+import { ollamaClient } from "../backend/models/ollama.client.js";
 
 export class EmbeddingService {
   private static instance: EmbeddingService;
@@ -31,30 +31,13 @@ export class EmbeddingService {
       return new Array(this.dimension).fill(0);
     }
 
-    if (env.OPENAI_API_KEY && env.OPENAI_API_KEY.startsWith("sk-")) {
-      try {
-        const response = await fetch("https://api.openai.com/v1/embeddings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${env.OPENAI_API_KEY}`
-          },
-          body: JSON.stringify({
-            input: text.slice(0, 4000),
-            model: "text-embedding-3-small"
-          })
-        });
-
-        if (response.ok) {
-          const json = (await response.json()) as any;
-          const vector = json?.data?.[0]?.embedding;
-          if (Array.isArray(vector) && vector.length > 0) {
-            return this.normalizeVector(vector);
-          }
-        }
-      } catch (err) {
-        logger.debug("OpenAI embedding skipped, falling back to local semantic encoder", { error: String(err) });
+    try {
+      const vector = await ollamaClient.embed(text);
+      if (Array.isArray(vector) && vector.length > 0) {
+        return this.normalizeVector(vector);
       }
+    } catch (err) {
+      logger.debug("Ollama embedding skipped, using local semantic encoder", { error: String(err) });
     }
 
     return this.generateSemanticFeatureVector(text);

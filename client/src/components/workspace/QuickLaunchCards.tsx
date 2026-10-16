@@ -7,7 +7,7 @@ interface QuickLaunchProps {
 }
 
 export const QuickLaunchCards: React.FC<QuickLaunchProps> = ({ layout = 'landing' }) => {
-  const { executeAgentRun, setSelectedAgentId, demoProfiles, activeProfileId } = useApp();
+  const { executeAgentRun, setSelectedAgentId, demoProfiles, activeProfileId, messages } = useApp();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const defaultSuggestions = [
@@ -34,13 +34,22 @@ export const QuickLaunchCards: React.FC<QuickLaunchProps> = ({ layout = 'landing
   ];
 
   const currentProfile = demoProfiles.find(p => p.id === activeProfileId);
-  const suggestions = currentProfile?.quickPrompts
+  const profileSuggestions = currentProfile?.quickPrompts
     ? currentProfile.quickPrompts.map(qp => ({
         agentId: qp.agentId,
         text: qp.label,
         prompt: qp.prompt
       }))
     : defaultSuggestions;
+
+  const latestAiMessage = [...messages].reverse().find(m => !m.isUser && m.suggestions && m.suggestions.length > 0);
+  const activeSuggestions = (layout === 'inline' && latestAiMessage?.suggestions && latestAiMessage.suggestions.length > 0)
+    ? latestAiMessage.suggestions.map(s => ({
+        agentId: s.agentId || 'multi-agent',
+        text: s.label,
+        prompt: s.prompt
+      }))
+    : profileSuggestions;
 
   const handleClick = (agentId: string, prompt: string) => {
     setSelectedAgentId(agentId);
@@ -52,12 +61,13 @@ export const QuickLaunchCards: React.FC<QuickLaunchProps> = ({ layout = 'landing
       <div style={inlineStyles.wrapper}>
         <div style={inlineStyles.label}>
           <Icons.Sparkles size={11} />
-          <span>Suggestions</span>
+          <span>Next Steps</span>
         </div>
         <div style={inlineStyles.row}>
-          {suggestions.slice(0, 3).map((s, i) => (
+          {activeSuggestions.slice(0, 3).map((s, i) => (
             <button
               key={i}
+              className="interactive-hover-lift"
               onClick={() => handleClick(s.agentId, s.prompt)}
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
@@ -79,9 +89,10 @@ export const QuickLaunchCards: React.FC<QuickLaunchProps> = ({ layout = 'landing
 
   return (
     <div style={landingStyles.container}>
-      {suggestions.map((s, i) => (
+      {activeSuggestions.map((s, i) => (
         <button
           key={i}
+          className="dashboard-card-interactive"
           onClick={() => handleClick(s.agentId, s.prompt)}
           onMouseEnter={() => setHoveredIdx(i)}
           onMouseLeave={() => setHoveredIdx(null)}

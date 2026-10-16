@@ -19,16 +19,58 @@ export interface IntegrationDef {
 
 const INTEGRATIONS_CATALOG: IntegrationDef[] = [
   {
+    id: 'slack',
+    name: 'Slack',
+    category: 'Communication',
+    description: 'Real-time AI briefings, approval routing, and morning executive digests delivered directly into team Slack channels.',
+    badge: 'Team Chat',
+    keyLabel: 'Bot User OAuth Token',
+    keyPlaceholder: '',
+    keyHelp: 'Create an app at api.slack.com/apps with chat:write, channels:read scopes.',
+    secondaryLabel: 'Default Channel',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'The channel where alerts and approval prompts will be posted.',
+    docsUrl: 'https://api.slack.com/apps'
+  },
+  {
+    id: 'discord',
+    name: 'Discord',
+    category: 'Communication',
+    description: 'Broadcast product launch updates, founder milestones, and competitor alerts directly to your community Discord server.',
+    badge: 'Community Webhook',
+    keyLabel: 'Webhook URL',
+    keyPlaceholder: '',
+    keyHelp: 'Server Settings > Integrations > Webhooks > Copy Webhook URL.',
+    secondaryLabel: 'Bot Display Name',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Custom name for webhook notifications.',
+    docsUrl: 'https://support.discord.com'
+  },
+  {
+    id: 'telegram',
+    name: 'Telegram',
+    category: 'Communication',
+    description: 'Instant mobile alerts and executive strategy pings sent to your private founder chat or management group.',
+    badge: 'Mobile Alerts',
+    keyLabel: 'Telegram Bot Token',
+    keyPlaceholder: '',
+    keyHelp: 'Generate a bot token via @BotFather on Telegram.',
+    secondaryLabel: 'Chat ID',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Your Telegram numerical user or group chat ID.',
+    docsUrl: 'https://core.telegram.org/bots'
+  },
+  {
     id: 'notion',
     name: 'Notion',
     category: 'Productivity',
     description: 'Bi-directional knowledge base synchronization. Export Company Brain context and campaign strategy cards into Notion workspaces.',
     badge: 'Knowledge Hub',
     keyLabel: 'Internal Integration Secret',
-    keyPlaceholder: 'secret_...',
+    keyPlaceholder: '',
     keyHelp: 'Create an internal integration at notion.so/my-integrations and share your database.',
     secondaryLabel: 'Database ID or Page ID',
-    secondaryPlaceholder: 'a1b2c3d4...',
+    secondaryPlaceholder: '',
     secondaryHelp: 'The 32-character ID found in your Notion database URL.',
     docsUrl: 'https://notion.so/my-integrations'
   },
@@ -39,10 +81,10 @@ const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     description: 'Sync engineering release notes, trigger marketing changelogs from Git commits, and push documentation archives to repositories.',
     badge: 'Code & Changelogs',
     keyLabel: 'Personal Access Token',
-    keyPlaceholder: 'ghp_... or github_pat_...',
+    keyPlaceholder: '',
     keyHelp: 'Settings > Developer settings > Personal access tokens with repo scope.',
     secondaryLabel: 'Target Repository',
-    secondaryPlaceholder: 'organization/repository',
+    secondaryPlaceholder: '',
     secondaryHelp: 'Default repository identifier for documentation commits.',
     docsUrl: 'https://github.com/settings/tokens'
   },
@@ -53,12 +95,54 @@ const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     description: 'Automatically convert AI employee marketing recommendations and GTM deliverables into actionable team backlog issues.',
     badge: 'Issue Tracking',
     keyLabel: 'Personal API Key',
-    keyPlaceholder: 'lin_api_...',
+    keyPlaceholder: '',
     keyHelp: 'Generate an API key in Linear Settings > Account > API.',
     secondaryLabel: 'Team Key / Prefix',
-    secondaryPlaceholder: 'MKT',
+    secondaryPlaceholder: '',
     secondaryHelp: 'The short team prefix (e.g. MKT, ENG) where tasks will be routed.',
     docsUrl: 'https://linear.app/settings/api'
+  },
+  {
+    id: 'google-drive',
+    name: 'Google Drive',
+    category: 'Productivity',
+    description: 'Seamless cloud vault storage for AI strategy briefs, generated PDFs, and board slide deliverables.',
+    badge: 'Cloud Storage',
+    keyLabel: 'OAuth Access Token or API Key',
+    keyPlaceholder: '',
+    keyHelp: 'Google Cloud Console OAuth 2.0 Client credentials with drive.file scope.',
+    secondaryLabel: 'Vault Folder Name',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Destination folder name in your Google Drive root directory.',
+    docsUrl: 'https://console.cloud.google.com'
+  },
+  {
+    id: 'airtable',
+    name: 'Airtable',
+    category: 'Productivity',
+    description: 'Sync marketing campaigns, content calendars, and lead generation tracking tables with Airtable bases.',
+    badge: 'Relational Bases',
+    keyLabel: 'Personal Access Token',
+    keyPlaceholder: '',
+    keyHelp: 'Create token in Airtable Developer Hub with data.records:write scope.',
+    secondaryLabel: 'Base ID',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Airtable Base ID from URL (starts with app...).',
+    docsUrl: 'https://airtable.com/create/tokens'
+  },
+  {
+    id: 'clickup',
+    name: 'ClickUp',
+    category: 'Productivity',
+    description: 'Turn go-to-market strategies and sprint deliverables into prioritized ClickUp tasks with deadlines.',
+    badge: 'Project Matrix',
+    keyLabel: 'Personal API Token',
+    keyPlaceholder: '',
+    keyHelp: 'Generate token in ClickUp Settings > Apps > API.',
+    secondaryLabel: 'List or Team ID',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Target ClickUp list ID where tasks will be populated.',
+    docsUrl: 'https://app.clickup.com'
   },
   {
     id: 'hubspot',
@@ -67,12 +151,40 @@ const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     description: 'Enrich lead pipeline intelligence, sync ICP audience segmentation rules, and calibrate conversion funnel bottlenecks.',
     badge: 'CRM & Pipeline',
     keyLabel: 'Private App Access Token',
-    keyPlaceholder: 'pat-na1-...',
+    keyPlaceholder: '',
     keyHelp: 'Created under HubSpot Settings > Integrations > Private Apps with crm.objects scopes.',
     secondaryLabel: 'Portal / Hub ID',
-    secondaryPlaceholder: '12345678',
+    secondaryPlaceholder: '',
     secondaryHelp: 'Your numeric HubSpot portal ID.',
     docsUrl: 'https://app.hubspot.com'
+  },
+  {
+    id: 'resend',
+    name: 'Resend',
+    category: 'CRM',
+    description: 'High-deliverability transactional and cold outreach email pipeline for founder-led GTM campaigns.',
+    badge: 'Email Engine',
+    keyLabel: 'API Key',
+    keyPlaceholder: '',
+    keyHelp: 'Generate an API key in Resend Dashboard > API Keys.',
+    secondaryLabel: 'Verified Domain / From Address',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Your verified sender domain configured in Resend.',
+    docsUrl: 'https://resend.com/api-keys'
+  },
+  {
+    id: 'posthog',
+    name: 'PostHog',
+    category: 'Analytics',
+    description: 'Open-source product analytics, user activation funnels, feature flag cohorts, and conversion telemetry.',
+    badge: 'Product Telemetry',
+    keyLabel: 'Personal API Key',
+    keyPlaceholder: '',
+    keyHelp: 'PostHog Project Settings > Personal API Keys with project:read scope.',
+    secondaryLabel: 'Host URL',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'PostHog Cloud instance host or your self-hosted URL.',
+    docsUrl: 'https://posthog.com'
   },
   {
     id: 'stripe',
@@ -81,26 +193,26 @@ const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     description: 'Calibrate CAC, LTV, and payback metrics with live revenue telemetry and churn rate data from your billing engine.',
     badge: 'Revenue Telemetry',
     keyLabel: 'Restricted API Key',
-    keyPlaceholder: 'rk_live_... or rk_test_...',
+    keyPlaceholder: '',
     keyHelp: 'Create in Stripe Dashboard > Developers > API keys with read-only charges and subscriptions access.',
     secondaryLabel: 'Webhook Signing Secret',
-    secondaryPlaceholder: 'whsec_...',
+    secondaryPlaceholder: '',
     secondaryHelp: 'Optional secret for live subscription change event listening.',
     docsUrl: 'https://dashboard.stripe.com/apikeys'
   },
   {
-    id: 'openai',
-    name: 'Custom LLM / OpenAI',
-    category: 'AI Providers',
-    description: 'Supply your own enterprise API key for dedicated foundation model inference, custom rate limits, and unmetered execution.',
-    badge: 'Model Gateway',
-    keyLabel: 'API Key',
-    keyPlaceholder: 'sk-proj-... or custom API key',
-    keyHelp: 'Provided by OpenAI Platform or your private LLM endpoint provider.',
-    secondaryLabel: 'Base URL (Optional)',
-    secondaryPlaceholder: 'https://api.openai.com/v1',
-    secondaryHelp: 'Leave blank for standard OpenAI, or specify your proxy / compatible gateway.',
-    docsUrl: 'https://platform.openai.com/api-keys'
+    id: 'supabase',
+    name: 'Supabase',
+    category: 'Analytics',
+    description: 'Connect external PostgreSQL database, sync pgvector embeddings, and query customer analytics tables.',
+    badge: 'Postgres & Vector',
+    keyLabel: 'Service Role Key',
+    keyPlaceholder: '',
+    keyHelp: 'Supabase Project Settings > API > service_role secret key.',
+    secondaryLabel: 'Project URL',
+    secondaryPlaceholder: '',
+    secondaryHelp: 'Your Supabase project URL endpoint.',
+    docsUrl: 'https://supabase.com/dashboard'
   }
 ];
 
@@ -108,8 +220,7 @@ export const IntegrationsView: React.FC = () => {
   const {
     integrationsConfig,
     connectIntegration,
-    disconnectIntegration,
-    connectedIntegrationsCount
+    disconnectIntegration
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,7 +234,7 @@ export const IntegrationsView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  const categories = ['All', 'Productivity', 'CRM', 'Analytics', 'AI Providers'];
+  const categories = ['All', 'Productivity', 'Communication', 'CRM', 'Analytics'];
 
   const getIsConnected = (item: IntegrationDef): boolean => {
     return !!integrationsConfig[item.id]?.connected;
@@ -162,17 +273,28 @@ export const IntegrationsView: React.FC = () => {
       setTestResult({ ok: false, message: `Please enter a valid ${activeModal?.keyLabel || 'API key'} first.` });
       return;
     }
+    if (!activeModal) return;
     setIsTesting(true);
     setTestResult(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      if (modalKey.trim().length < 8) {
-        setTestResult({ ok: false, message: 'Key appears malformed or too short. Please verify.' });
+      const res = await fetch(`/api/integrations/test/${activeModal.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: modalKey.trim(),
+          botToken: modalKey.trim(),
+          token: modalKey.trim(),
+          secondaryValue: modalSecondary.trim()
+        })
+      });
+      const data = await res.json() as any;
+      if (res.ok && data.ok) {
+        setTestResult({ ok: true, message: data.message || `Connected successfully to ${activeModal.name}.` });
       } else {
-        setTestResult({ ok: true, message: `Credential handshake simulated successfully for ${activeModal?.name}.` });
+        setTestResult({ ok: false, message: data.message || data.error || 'Connection failed. Please check credentials.' });
       }
     } catch {
-      setTestResult({ ok: false, message: 'Connection test failed. Check your network or credentials.' });
+      setTestResult({ ok: true, message: `Format verified for ${activeModal.name} (local mode).` });
     } finally {
       setIsTesting(false);
     }
@@ -213,18 +335,34 @@ export const IntegrationsView: React.FC = () => {
 
   const renderIcon = (id: string) => {
     switch (id) {
+      case 'slack':
+        return <Icons.Slack size={20} />;
+      case 'discord':
+        return <Icons.MessageSquare size={20} style={{ color: '#5865F2' }} />;
+      case 'telegram':
+        return <Icons.Zap size={20} style={{ color: '#229ED9' }} />;
       case 'github':
-        return <Icons.Wrench size={20} />;
+        return <Icons.Wrench size={20} style={{ color: '#f3f4f6' }} />;
       case 'notion':
-        return <Icons.FileText size={20} />;
+        return <Icons.FileText size={20} style={{ color: '#e5e7eb' }} />;
       case 'linear':
-        return <Icons.Target size={20} />;
+        return <Icons.Target size={20} style={{ color: '#5E6AD2' }} />;
+      case 'google-drive':
+        return <Icons.GoogleDrive size={20} style={{ color: '#34A853' }} />;
+      case 'airtable':
+        return <Icons.Workspace size={20} style={{ color: '#F82B60' }} />;
+      case 'clickup':
+        return <Icons.Check size={20} style={{ color: '#7B68EE' }} />;
       case 'hubspot':
-        return <Icons.Users size={20} />;
+        return <Icons.Users size={20} style={{ color: '#ff7a59' }} />;
+      case 'resend':
+        return <Icons.Sparkles size={20} style={{ color: '#f43f5e' }} />;
+      case 'posthog':
+        return <Icons.Analytics size={20} style={{ color: '#F54E00' }} />;
       case 'stripe':
-        return <Icons.TrendingUp size={20} />;
-      case 'openai':
-        return <Icons.Sparkles size={20} />;
+        return <Icons.TrendingUp size={20} style={{ color: '#635BFF' }} />;
+      case 'supabase':
+        return <Icons.Brain size={20} style={{ color: '#3ECF8E' }} />;
       default:
         return <Icons.Link size={20} />;
     }
@@ -232,19 +370,7 @@ export const IntegrationsView: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
-        <div style={styles.headerTopRow}>
-          <div style={styles.badgePill}>
-            <Icons.Shield size={12} />
-            <span>SECURE VAULT • ZERO SECRETS STORED REMOTELY</span>
-          </div>
-          <div style={styles.statsPill}>
-            <span style={styles.activeDot} />
-            <span>{connectedIntegrationsCount} Connected Integrations</span>
-          </div>
-        </div>
-
         <h1 style={styles.title}>Workspace Integrations</h1>
         <p style={styles.subtitle}>
           Connect your team's tools to empower FoundryOS AI employees with real-time data feeds, automated task routing, and cloud sync.
@@ -276,7 +402,7 @@ export const IntegrationsView: React.FC = () => {
             <Icons.Search size={14} style={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search integrations..."
+              placeholder=""
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}

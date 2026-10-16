@@ -3,12 +3,14 @@ import { webSearchPlugin } from "./builtin/web-search.plugin.js";
 import { marketIntelPlugin } from "./builtin/market-intel.plugin.js";
 import { brainPlugin } from "./builtin/brain.plugin.js";
 import { pdfDocumentPlugin } from "./builtin/pdf-document.plugin.js";
+import { realtimeTrackingPlugin } from "./builtin/realtime-tracking.plugin.js";
 
 export function initializePlugins(): void {
   toolRegistry.registerPlugin(webSearchPlugin);
   toolRegistry.registerPlugin(marketIntelPlugin);
   toolRegistry.registerPlugin(brainPlugin);
   toolRegistry.registerPlugin(pdfDocumentPlugin);
+  toolRegistry.registerPlugin(realtimeTrackingPlugin);
 }
 
 export * from "./tool.types.js";

@@ -1,44 +1,90 @@
 # FoundryOS
 
-Autonomous AI Specialist Team & Operations Platform. FoundryOS coordinates specialized autonomous AI agents, semantic knowledge bases ("Company Brain" with pgvector), Model Context Protocol (MCP) tools, Human-In-The-Loop (HITL) governance, and multi-provider LLM routing (OpenAI GPT, Ollama local fallback, TrueForge agents).
+<p align="center">
+  <strong>Autonomous AI Specialist Team & Enterprise Operations Platform</strong>
+</p>
+
+FoundryOS coordinates specialized autonomous AI agents, semantic knowledge bases ("Company Brain" with `pgvector`), Model Context Protocol (MCP) tool integrations, Human-In-The-Loop (HITL) steering, and multi-provider LLM routing (OpenAI GPT-4o, local Ollama fallback, and TrueForge agents).
 
 ---
 
-## Key Architecture & Capabilities
+## Architecture Overview
 
-1. **Autonomous AI Specialist Team**:
-   - Pre-configured agent personas: Market Research Analyst, Competitive Intelligence Specialist, Chief Brand Strategist, GTM Funnel Architect, and Foundry Assistant.
-   - Dynamic prompt synthesis tailored to company profile, ICP, tone, and strategic goals.
+FoundryOS operates on a multi-tier autonomous execution engine designed for reliable enterprise workflows:
 
-2. **Human-In-The-Loop (HITL) Steering & Governance**:
-   - High-stakes action approval gate before brand commitments, external broadcasts, or memory validations.
-   - Multi-option strategic branching: 3 curated strategic paths + custom prompt input field.
-   - Reactive re-planning: when a direction is rejected, agents immediately recalculate alternative solutions based on feedback.
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    FoundryOS Modern Web Client                          │
+│   (React + TypeScript + Vite + Glassmorphic UI + Dark/Light Theme)      │
+│   • Landing Showcase (Agent Simulator, ROI Calculator, Bento Grid)       │
+│   • Unified Workspace & Multi-File Upload Deliverables                  │
+│   • Human-In-The-Loop Steering Gates & Decision Branching               │
+│   • Settings & Tenant API Key Governance                                │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ HTTP / REST / SSE
+┌────────────────────────────────────▼────────────────────────────────────┐
+│                       Express API & Gateway                             │
+│   • JWT Auth & Tenant Scoping        • Rate Limits & Quotas             │
+│   • Document Archive & PDF Export     • Distributed BullMQ Task Queue   │
+└──────────────────┬─────────────────┬──────────────────┬─────────────────┘
+                   │                 │                  │
+┌──────────────────▼──────┐ ┌────────▼────────┐ ┌───────▼─────────────────┐
+│ Autonomous Agent Engine │ │  Company Brain  │ │ Model Context Protocol  │
+│ • Specialist Personas   │ │  (Semantic RAG) │ │ (MCP) Integration Hub   │
+│ • Dynamic Synthesizer   │ │ • 7-Layer Store │ │ • Stdio / In-Memory RPC │
+│ • Auto & Direct Routing │ │ • pgvector HNSW │ │ • Market Intel Server   │
+│ • HITL Approval Gates   │ │ • Context Engine│ │ • Document Vault Server │
+└──────────────────┬──────┘ └────────┬────────┘ └───────┬─────────────────┘
+                   │                 │                  │
+┌──────────────────▼─────────────────▼──────────────────▼─────────────────┐
+│                       Multi-Provider LLM Router                         │
+│   • Primary: OpenAI GPT-4o / GPT-4o-mini (Structured JSON outputs)      │
+│   • Fallback: Local Ollama (llama3.2:1b, nomic-embed-text)              │
+│   • Cloud Sessions: TrueForge Agent Runtime                             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-3. **Modern High-Contrast Glassmorphic UI (`client/`)**:
-   - React + TypeScript + Vite frontend with smooth view transitions and micro-animations.
-   - Theme-adaptive glowing circuit brain branding with dark and light mode support.
-   - Real-time token usage analytics, daily credit budgeting, and session vaults.
-   - Client-side and server-side PDF deliverable export engine.
+---
 
-4. **Model Context Protocol (MCP) Integration**:
-   - Extensible MCP tool registry and client harness (`src/backend/mcp/`).
-   - Built-in MCP servers: Market Intel, Document Archive, SEO Audits, Brain Memory, Google Drive, and Slack broadcasts.
+## Core Capabilities
 
-5. **Company Brain (Semantic Memory & RAG)**:
-   - PostgreSQL schema with `pgvector` HNSW index support.
-   - Token-budget-aware context builder with dynamic memory vector weighting.
-   - Active memory and directives dashboard injecting ICP, tone, and guardrails directly into agent runtimes.
+### 1. Autonomous AI Specialist Team
+- **Pre-Configured Personas**:
+  - **Market Research Analyst**: Synthesizes market trends, TAM/SAM sizing, industry tailwinds, and risks.
+  - **Competitive Intelligence Specialist**: Maps competitor positioning, pricing models, feature parity, and strategic moats.
+  - **Chief Brand Strategist**: Creates ICP profiles, positioning frameworks, tone guidelines, and narrative arcs.
+  - **GTM Funnel Architect**: Designs lead generation funnels, acquisition loops, unit economics, and pipeline stages.
+  - **Foundry Assistant**: Universal operational partner for research synthesis, multi-document digestion, and execution plans.
+- **Dynamic Prompt Synthesis**: Injects active tenant profile, ICP definitions, brand guidelines, and guardrails into runtime turns.
+- **Multi-Document Analysis**: Allows uploading up to 5 documents simultaneously (PDF, Markdown, text briefs) to inform agent runs.
 
-6. **Multi-Provider LLM Engine**:
-   - **Primary**: OpenAI GPT-4o-mini (fast routing & chat) and GPT-4o (deep strategy generation).
-   - **Fallback**: Local Ollama (`llama3.2:1b`, `nomic-embed-text`) for offline/development use.
-   - Native structured JSON output via OpenAI's JSON Schema mode.
-   - Provider-agnostic `LLMClient` interface — swap providers with a single environment variable.
-   - TrueForge SDK agent harness for cloud session management and execution turns.
+### 2. Human-In-The-Loop (HITL) Steering & Governance
+- **High-Stakes Approval Gates**: Halts execution before external broadcasts, strategic pivots, or high-risk brand commitments.
+- **Strategic Decision Branching**: Surfaces three distinct strategic options plus custom user steering input.
+- **Reactive Re-Planning**: When a user rejects a direction or provides feedback, agents recalibrate and formulate alternative paths.
 
-7. **Distributed Task Queue**:
-   - BullMQ & Redis-backed job queues for resilient asynchronous task execution and background workflows.
+### 3. Company Brain (7-Layer Semantic RAG & pgvector)
+- **Vector Indexing**: PostgreSQL with `pgvector` HNSW indexes for rapid cosine similarity retrieval.
+- **Token-Budget-Aware Context Engine**: Assembles role-tailored context packages within dynamic LLM token budgets.
+- **Institutional Memory**: Automatically logs validated learnings, decisions, and outcomes to continuously improve team context.
+
+### 4. Model Context Protocol (MCP) Integration
+- **Universal Tool Standard**: Implements JSON-RPC 2.0 communication over Stdio and in-memory transports.
+- **Built-in MCP Servers**:
+  - **Market Intel Server**: Live web searching, competitor news, and industry trend telemetry.
+  - **Document Archive Server**: Secure tenant document storage, retrieval, and metadata indexing.
+  - **Brain Memory Server**: Direct semantic vector retrieval across institutional knowledge.
+  - **Integration Hub Server**: Coordinates external service connections, webhooks, and third-party integrations.
+
+### 5. Multi-Provider LLM Engine
+- **OpenAI**: GPT-4o-mini for low-latency tasks and GPT-4o for deep strategic reasoning with native JSON Schema output.
+- **Local Ollama Fallback**: Run fully offline with `llama3.2:1b` for chat and `nomic-embed-text` for embeddings.
+- **TrueForge Agent Runtime**: Cloud session and turn management for persistent autonomous workflows.
+
+### 6. Modern Web UI & Authentication
+- **Landing Experience**: Interactive Canvas hero, Live Agent Simulator, ROI Calculator, and Apple-inspired Bento Grid showcase.
+- **Workspace**: Real-time agent thought streaming, typing indicators, expandable artifact previews, and markdown rendering.
+- **Authentication & Settings**: Secure JWT tokens, tenant isolation, API key governance, and token quota monitoring.
 
 ---
 
@@ -46,37 +92,55 @@ Autonomous AI Specialist Team & Operations Platform. FoundryOS coordinates speci
 
 ```
 FoundryOs/
-├── client/                     # Modern React + Vite frontend workspace
+├── client/                     # Modern React + TypeScript + Vite frontend
 │   ├── src/
-│   │   ├── components/         # Workspace, Approvals, Brain, Employees, Analytics
-│   │   ├── context/            # Global AppContext and state management
-│   │   ├── types/              # TypeScript interface definitions
-│   │   └── utils/              # Output formatting & PDF generation
-│   ├── public/                 # Static assets & logos
-│   └── vite.config.ts          # Vite build & proxy configuration
+│   │   ├── components/
+│   │   │   ├── approvals/      # HITL decision gates & branching views
+│   │   │   ├── archive/        # Saved reports & document vaults
+│   │   │   ├── auth/           # Login, registration, and route guards
+│   │   │   ├── common/         # Brain logo, markdown renderer, icons
+│   │   │   ├── employees/      # AI specialist roster & persona cards
+│   │   │   ├── integrations/   # Third-party integrations dashboard
+│   │   │   ├── landing/        # Hero canvas, simulator, ROI calculator, bento
+│   │   │   ├── layout/         # Header, sidebar navigation, profile menus
+│   │   │   ├── settings/       # Account, API keys, billing, quotas
+│   │   │   └── workspace/      # Agent chat, quick launch, execution blobs
+│   │   ├── context/            # Global AppContext & state management
+│   │   ├── services/           # Frontend API and authentication services
+│   │   ├── types/              # Shared TypeScript interface definitions
+│   │   └── utils/              # PDF export formatting & date utilities
+│   ├── public/                 # Static assets & brain branding icons
+│   └── vite.config.ts          # Vite build, proxy & path alias config
 ├── src/
 │   ├── index.ts                # Application startup entry point
-│   ├── server.ts               # Server entry export
+│   ├── server.ts               # HTTP server bootstrap
 │   ├── backend/
-│   │   ├── agents/             # Agent runner & workflow execution logic
-│   │   ├── config/             # Zod-validated environment config & demo profiles
-│   │   ├── credits/            # Token tracking & credit calculation services
+│   │   ├── agents/             # Agent execution runner & router
+│   │   ├── auth/               # JWT authentication service & API key store
+│   │   ├── config/             # Zod-validated environment config & profiles
+│   │   ├── credits/            # Token tracking & credit budgeting
 │   │   ├── documents/          # Document archive store & PDF generator
-│   │   ├── employees/          # Employee persona catalog & prompts
+│   │   ├── employees/          # Employee catalog & dynamic prompt builders
 │   │   ├── errors/             # Custom domain error hierarchies
-│   │   ├── hitl/               # Human-In-The-Loop approval lifecycle service
-│   │   ├── integrations/       # Slack, Google Drive, and API key management
-│   │   ├── mcp/                # Model Context Protocol client & server handlers
-│   │   ├── models/             # LLM client interface, OpenAI, Ollama & resolver
-│   │   ├── plugins/            # Extensible tool registry & plugins
+│   │   ├── hitl/               # Human-In-The-Loop approval lifecycle
+│   │   ├── integrations/       # Integration store & credential vault
+│   │   ├── mcp/                # MCP client manager & built-in servers
+│   │   ├── models/             # LLM resolver, OpenAI client, Ollama client
+│   │   ├── plugins/            # Extensible tool registry & builtin plugins
 │   │   ├── queue/              # BullMQ queue managers & worker jobs
 │   │   ├── routes/             # REST API routers & endpoint handlers
-│   │   └── server.ts           # HTTP server & static bundle provider
+│   │   └── utils/              # Visualization charts & helpers
 │   ├── brain/                  # RAG context builder & semantic vector store
 │   ├── databases/              # PostgreSQL client, schema.sql & migrations
-│   └── trueforge/              # TrueForge agent session & turn services
+│   └── trueforge/              # TrueForge cloud agent session client
 ├── public/                     # Compiled production UI bundle served by Express
-├── tests/                      # Vitest test suites (agents, credits, mcp, flows)
+├── tests/                      # 20 Vitest test suites (108 tests)
+│   ├── agents/                 # Multi-upload & agent runner tests
+│   ├── auth/                   # Authentication & API key tests
+│   ├── backend/                # API router & controller tests
+│   ├── brain/                  # Context builder & 7-layer memory tests
+│   ├── mcp/                    # MCP client & server integration tests
+│   └── models/                 # Ollama & OpenAI LLM resolver tests
 ├── .env.example                # Environment variable configuration template
 ├── package.json
 └── tsconfig.json
@@ -90,10 +154,10 @@ FoundryOs/
 
 - **Node.js**: `>= 20.0.0`
 - **npm**: `>= 9.0.0`
-- **PostgreSQL**: `>= 15` with the `pgvector` extension installed (`CREATE EXTENSION IF NOT EXISTS vector;`)
+- **PostgreSQL**: `>= 15` with `pgvector` (`CREATE EXTENSION IF NOT EXISTS vector;`)
 - **Redis**: `>= 6.0` (for BullMQ queues)
-- **OpenAI API Key** (Recommended): Get from [platform.openai.com](https://platform.openai.com)
-- **Ollama** (Optional / local fallback):
+- **OpenAI API Key** (Recommended): [platform.openai.com](https://platform.openai.com)
+- **Ollama** (Optional for local execution):
   ```bash
   ollama pull llama3.2:1b
   ollama pull nomic-embed-text
@@ -113,32 +177,42 @@ FoundryOs/
    cd client && npm install && cd ..
    ```
 
-3. **Configure Environment Variables**:
+3. **Configure environment variables**:
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` to match your local database, Redis, and LLM credentials:
+   Update `.env` with your database and LLM credentials:
    ```env
    NODE_ENV=development
    PORT=3000
-   LOG_LEVEL=info
    DATABASE_URL=postgresql://foundry:foundry_pass@localhost:5432/foundry_os
    REDIS_URL=redis://localhost:6379
-   TRUEFORGE_API_URL=http://localhost:8080
-   TRUEFORGE_API_KEY=tf_dev_placeholder_key
-   EMBEDDING_MODEL=text-embedding-3-small
-   EMBEDDING_DIMENSIONS=1536
-   # LLM Provider ("openai" or "ollama")
    LLM_PROVIDER=openai
-   OPENAI_API_KEY=sk-your-key-here
+   OPENAI_API_KEY=your-openai-api-key
    OPENAI_MODEL=gpt-4o-mini
    OPENAI_STRATEGY_MODEL=gpt-4o
    ```
 
-4. **Initialize Database Schema**:
-   Run `src/databases/schema.sql` against your PostgreSQL database:
+4. **Initialize database schema**:
    ```bash
    psql -U foundry -d foundry_os -f src/databases/schema.sql
+   ```
+
+5. **Build and run**:
+   ```bash
+   # Build frontend and backend
+   npm run build:all
+
+   # Start the production server
+   npm run serve
+   ```
+   Or run with live reload during development:
+   ```bash
+   # In terminal 1 (Backend dev)
+   npm run dev
+
+   # In terminal 2 (Frontend dev)
+   npm run dev:client
    ```
 
 ---
@@ -150,27 +224,27 @@ FoundryOs/
 | **Build Full System** | `npm run build:all` | Compiles backend TypeScript and builds the production React bundle into `public/` |
 | **Build Backend** | `npm run build` | Compiles backend TypeScript into `dist/` |
 | **Build Client** | `npm run build:client` | Builds Vite client production bundle |
-| **Dev Client** | `npm run dev:client` | Runs Vite frontend with live Hot Module Replacement |
-| **Start Server** | `npm run serve` | Builds and serves the unified API & Dashboard on port 3000 |
-| **Test** | `npm test` | Runs all Vitest test suites |
+| **Dev Client** | `npm run dev:client` | Runs Vite frontend with live Hot Module Replacement (HMR) |
+| **Start Server** | `npm run serve` | Serves the unified API & Dashboard on port 3000 |
+| **Test** | `npm test` | Runs all 20 Vitest test suites (108 tests) |
 | **Test Watch** | `npm run test:watch` | Runs Vitest in interactive watch mode |
-| **Typecheck** | `npm run typecheck` | Validates TypeScript types across the backend |
+| **Typecheck** | `npm run typecheck` | Validates TypeScript types across the entire backend |
 
 ---
 
 ## Testing
 
-FoundryOS uses Vitest for unit and integration testing. Run:
+FoundryOS maintains comprehensive test coverage across all major components:
 
 ```bash
 npm test
 ```
 
-Test suites cover:
-- Agent execution pipeline & routing
-- Context Builder token budgeting & memory vectors
-- Model Context Protocol (MCP) tool registrations
-- Human-In-The-Loop approval workflows
+Test suites validate:
+- Agent routing, dynamic synthesis, and execution pipeline
+- Multi-file document upload & context aggregation
+- 7-layer Company Brain RAG & token-budget context builder
+- Model Context Protocol (MCP) tool registration & invocation
+- Human-In-The-Loop (HITL) approval lifecycles & branching
+- JWT authentication, password hashing, and role permissions
 - Token & credit quota limits
-- TrueForge agent session lifecycles
-- Multi-document upload & PDF deliverable compilation

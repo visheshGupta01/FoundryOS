@@ -68,55 +68,53 @@ export class ContextInspector {
         ]);
     } catch {
       const activeState = getActiveCompanyBrainState();
-      company = {
-        companyName: activeState.name,
-        website: activeState.website,
-        industry: "B2B Marketing Technology",
-        description: activeState.oneLiner
-      };
-      products = [
-        {
-          productName: `${activeState.name} Suite`,
-          category: "AI Marketing OS",
-          problemStatement: activeState.problem,
-          features: ["Company Brain", "Research & Strategy Workforce", "Flow Orchestration"]
-        }
-      ];
-      icp = {
-        customerType: activeState.audience,
-        painPoints: [activeState.problem]
-      };
-      personas = [{ name: "Founder", role: "Startup Founder & CEO" }];
-      brand = {
-        brandPositioning: activeState.oneLiner,
-        tonePositive: activeState.tone.split(",").map((s) => s.trim()),
-        toneAvoid: activeState.avoidTone ? activeState.avoidTone.split(",").map((s) => s.trim()) : []
-      };
-      competitors = [
-        {
-          name: activeState.competitors.split(",")[0]?.trim() || "Generic AI Tools",
-          strengths: ["Fast generation"],
-          weaknesses: ["Zero persistent institutional memory"]
-        }
-      ];
-      goals = [
-        {
-          objective: activeState.goal,
-          successMetric: "Zero prompt re-entry and complete workflow consistency"
-        }
-      ];
-      strategies = [
-        {
-          version: 1,
-          title: "Positioning FoundryOS as the Coordinated AI Marketing OS"
-        }
-      ];
-      memories = [
-        {
-          memoryType: "learning",
-          statement: "Technical founders prefer structured outputs and verifiable provenance."
-        }
-      ];
+      if (activeState.name) {
+        company = {
+          companyName: activeState.name,
+          website: activeState.website,
+          industry: "General Business",
+          description: activeState.oneLiner
+        };
+        products = activeState.problem
+          ? [
+              {
+                productName: `${activeState.name} Solution`,
+                category: "Product/Service",
+                problemStatement: activeState.problem,
+                features: []
+              }
+            ]
+          : [];
+        icp = activeState.audience
+          ? {
+              customerType: activeState.audience,
+              painPoints: activeState.problem ? [activeState.problem] : []
+            }
+          : null;
+        personas = [{ name: "Customer", role: "Target User" }];
+        brand = {
+          brandPositioning: activeState.oneLiner,
+          tonePositive: activeState.tone ? activeState.tone.split(",").map((s) => s.trim()) : ["direct"],
+          toneAvoid: activeState.avoidTone ? activeState.avoidTone.split(",").map((s) => s.trim()) : []
+        };
+        competitors = activeState.competitors
+          ? [
+              {
+                name: activeState.competitors.split(",")[0]?.trim() || "Competitors",
+                strengths: [],
+                weaknesses: []
+              }
+            ]
+          : [];
+        goals = activeState.goal
+          ? [
+              {
+                objective: activeState.goal,
+                successMetric: ""
+              }
+            ]
+          : [];
+      }
     }
 
     const layers: LayerTokenMetric[] = [];

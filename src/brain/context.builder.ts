@@ -128,16 +128,16 @@ export function buildContext(rawInput: ContextAssemblyInput): AssembledContext {
 }
 
 let activeCompanyState = {
-  name: "FoundryOS",
-  website: "https://foundryos.com",
-  oneLiner: "The AI Marketing Operating System for startups. Give founders a coordinated AI marketing team instead of disconnected tools.",
-  audience: "Early-stage B2B SaaS and technical founders with 1-20 employees.",
-  problem: "Founders waste weeks juggling disconnected AI tools with zero persistent company context, inconsistent messaging, and no clear path to revenue.",
-  competitors: "Generic AI chatbots and expensive agencies",
-  tone: "Confident, Human & Clear",
-  avoidTone: "Buzzwords, overly corporate jargon, and generic AI hype words.",
-  pricing: "Tiered subscription ($49 - $199/mo)",
-  goal: "Acquire our first 100 paying startup founders and scale organic search."
+  name: "",
+  website: "",
+  oneLiner: "",
+  audience: "",
+  problem: "",
+  competitors: "",
+  tone: "",
+  avoidTone: "",
+  pricing: "",
+  goal: ""
 };
 
 export function updateActiveCompanyBrainState(data: Partial<typeof activeCompanyState>): void {
@@ -189,65 +189,73 @@ export async function buildEmployeeContextPackage(
         repo.queryMemories(input.tenantId, { status: "validated", minConfidence: 0.6 })
       ]);
   } catch {
-    company = {
-      companyName: activeCompanyState.name,
-      website: activeCompanyState.website,
-      industry: "B2B Marketing Technology",
-      description: activeCompanyState.oneLiner
-    };
-    products = [
-      {
-        productName: `${activeCompanyState.name} Suite`,
-        category: "AI Marketing OS",
-        problemStatement: activeCompanyState.problem,
-        features: ["Company Brain", "Research & Strategy Workforce", "Flow Orchestration"]
-      }
-    ];
-    icp = {
-      customerType: activeCompanyState.audience,
-      painPoints: [activeCompanyState.problem]
-    };
-    personas = [{ name: "Founder", role: "Startup Founder & CEO" }];
-    brand = {
-      brandPositioning: activeCompanyState.oneLiner,
-      tonePositive: activeCompanyState.tone.split(",").map((s) => s.trim()),
-      toneAvoid: activeCompanyState.avoidTone ? activeCompanyState.avoidTone.split(",").map((s) => s.trim()) : []
-    };
-    competitors = [
-      {
-        name: activeCompanyState.competitors.split(",")[0]?.trim() || "Generic AI Tools",
-        strengths: ["Fast generation"],
-        weaknesses: ["Zero persistent institutional memory"]
-      }
-    ];
-    goals = [
-      {
-        objective: activeCompanyState.goal,
-        successMetric: "Zero prompt re-entry and complete workflow consistency"
-      }
-    ];
-    strategies = [
-      {
-        version: 1,
-        title: "Positioning FoundryOS as the Coordinated AI Marketing OS"
-      }
-    ];
-    memories = [
-      {
-        memoryType: "learning",
-        statement: "Technical founders prefer structured outputs and verifiable provenance."
-      }
-    ];
+    if (activeCompanyState.name) {
+      company = {
+        companyName: activeCompanyState.name,
+        website: activeCompanyState.website,
+        industry: "General Business",
+        description: activeCompanyState.oneLiner
+      };
+      products = activeCompanyState.problem
+        ? [
+            {
+              productName: `${activeCompanyState.name} Solution`,
+              category: "Product/Service",
+              problemStatement: activeCompanyState.problem,
+              features: []
+            }
+          ]
+        : [];
+      icp = activeCompanyState.audience
+        ? {
+            customerType: activeCompanyState.audience,
+            painPoints: activeCompanyState.problem ? [activeCompanyState.problem] : []
+          }
+        : null;
+      brand = {
+        brandPositioning: activeCompanyState.oneLiner,
+        tonePositive: activeCompanyState.tone ? activeCompanyState.tone.split(",").map((s) => s.trim()) : ["direct", "helpful"],
+        toneAvoid: activeCompanyState.avoidTone ? activeCompanyState.avoidTone.split(",").map((s) => s.trim()) : []
+      };
+      competitors = activeCompanyState.competitors
+        ? [
+            {
+              name: activeCompanyState.competitors.split(",")[0]?.trim() || "Competitors",
+              strengths: [],
+              weaknesses: []
+            }
+          ]
+        : [];
+      goals = activeCompanyState.goal
+        ? [
+            {
+              objective: activeCompanyState.goal,
+              successMetric: ""
+            }
+          ]
+        : [];
+    }
   }
 
   const sections: { title: string; content: string }[] = [];
 
-  if (company) {
+  if (company && company.companyName) {
     sections.push({
       title: "COMPANY",
       content: `${company.companyName}${company.industry ? ` | ${company.industry}` : ""}${company.description ? `\n${company.description}` : ""}`
     });
     includedLayers.push("companyIdentity");
+  } else if (activeCompanyState.name) {
+    sections.push({
+      title: "COMPANY",
+      content: `${activeCompanyState.name}${activeCompanyState.oneLiner ? `\n${activeCompanyState.oneLiner}` : ""}`
+    });
+    includedLayers.push("companyIdentity");
+  } else {
+    sections.push({
+      title: "CONTEXT_DIRECTIVE",
+      content: "No company profile pre-configured in Company Brain. Analyze and respond specifically to the business, market, product, and questions stated in the user task. Do NOT assume the business is FoundryOS and do NOT preach or pitch FoundryOS."
+    });
   }
 
   if (products.length > 0) {

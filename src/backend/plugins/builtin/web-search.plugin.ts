@@ -158,11 +158,126 @@ async function cleanWebPage(rawHtml: string): Promise<string> {
   return textOnly.replace(/\s+/g, " ").trim().slice(0, 3000);
 }
 
+const TechTrendsInputSchema = z.object({
+  topic: z.string().min(1),
+  limit: z.number().int().positive().max(10).default(5)
+});
+
+const WikipediaInputSchema = z.object({
+  query: z.string().min(1)
+});
+
+const NeuralResearchInputSchema = z.object({
+  query: z.string().min(1),
+  depth: z.enum(["quick", "deep"]).default("quick")
+});
+
+async function runHackerNewsSearch(topic: string, limit = 5) {
+  try {
+    const encoded = encodeURIComponent(topic);
+    const res = await fetch(`https://hn.algolia.com/api/v1/search?query=${encoded}&tags=story&hitsPerPage=${limit}`, {
+      headers: { "User-Agent": "FoundryOS-MarketingBot/1.0" },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      const hits = (data.hits || []).map((h: any) => ({
+        title: h.title,
+        url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`,
+        points: h.points,
+        numComments: h.num_comments,
+        createdAt: h.created_at
+      }));
+      return { topic, count: hits.length, discussions: hits };
+    }
+  } catch (err) {
+    logger.debug(`HackerNews search fallback: ${String(err)}`);
+  }
+  return { topic, count: 0, discussions: [] };
+}
+
+async function runWikipediaSearch(query: string) {
+  try {
+    const cleanQuery = query.replace(/\s+/g, "_");
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`, {
+      headers: { "User-Agent": "FoundryOS-MarketingBot/1.0 (founder@foundryos.com)" },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      if (data.extract) {
+        return {
+          title: data.title,
+          description: data.description || "",
+          extract: data.extract,
+          url: data.content_urls?.desktop?.page || ""
+        };
+      }
+    }
+  } catch (err) {
+    logger.debug(`Wikipedia search fallback: ${String(err)}`);
+  }
+  return null;
+}
+
+async function runNeuralResearch(query: string, depth: "quick" | "deep" = "quick") {
+  const searchLimit = depth === "deep" ? 5 : 3;
+  const [webResults, wikiResult, hnResult] = await Promise.all([
+    runDuckDuckGoSearch(query, searchLimit),
+    runWikipediaSearch(query),
+    runHackerNewsSearch(query, 3)
+  ]);
+
+  const deepExtracts: Array<{ title: string; url: string; excerpt: string }> = [];
+
+  if (depth === "deep" && webResults.length > 0) {
+    const topUrls = webResults.slice(0, 2).map(r => r.url).filter(u => u && u.startsWith("http"));
+    const fetchPromises = topUrls.map(async (url) => {
+      try {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "FoundryOS-Analyzer/1.0" },
+          signal: AbortSignal.timeout(5000)
+        });
+        if (res.ok) {
+          const html = await res.text();
+          const clean = await cleanWebPage(html);
+          return { url, excerpt: clean.slice(0, 800) };
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    });
+
+    const settled = await Promise.all(fetchPromises);
+    settled.forEach(item => {
+      if (item) {
+        const matchingWeb = webResults.find(w => w.url === item.url);
+        deepExtracts.push({
+          title: matchingWeb?.title || "Page Excerpt",
+          url: item.url,
+          excerpt: item.excerpt
+        });
+      }
+    });
+  }
+
+  return {
+    provider: "free_neural_intelligence",
+    query,
+    depth,
+    wikiSummary: wikiResult,
+    searchResults: webResults,
+    communityDiscussions: hnResult.discussions,
+    deepPageExtracts: deepExtracts
+  };
+}
+
 export const webSearchPlugin: PluginDefinition = {
   id: "web-search-plugin",
   name: "Web Research & Intelligence",
-  description: "Free web search via DuckDuckGo and Exa AI search with live page content extractor",
-  version: "1.0.0",
+  description: "Free web search via DuckDuckGo, HackerNews, Wikipedia, and neural research with live page content extractor",
+  version: "1.1.0",
   tools: [
     {
       name: "web_search",
@@ -176,11 +291,39 @@ export const webSearchPlugin: PluginDefinition = {
     },
     {
       name: "exa_search",
-      description: "Neural semantic search via Exa API with automatic free web search fallback",
+      description: "Neural semantic search with automatic free web search fallback",
       parameters: ExaSearchInputSchema,
       source: "plugin:web-search-plugin",
       execute: async (input) => {
         return runExaSearch(input.query, input.numResults);
+      }
+    },
+    {
+      name: "neural_web_research",
+      description: "Free Exa-alternative neural web research synthesizing web search, Wikipedia, and community discussions",
+      parameters: NeuralResearchInputSchema,
+      source: "plugin:web-search-plugin",
+      execute: async (input) => {
+        return runNeuralResearch(input.query, input.depth);
+      }
+    },
+    {
+      name: "tech_trends",
+      description: "Find real-time startup discussions and user sentiment from HackerNews",
+      parameters: TechTrendsInputSchema,
+      source: "plugin:web-search-plugin",
+      execute: async (input) => {
+        return runHackerNewsSearch(input.topic, input.limit);
+      }
+    },
+    {
+      name: "wikipedia_intelligence",
+      description: "Retrieve high-accuracy industry definitions, market category summaries, and company history",
+      parameters: WikipediaInputSchema,
+      source: "plugin:web-search-plugin",
+      execute: async (input) => {
+        const res = await runWikipediaSearch(input.query);
+        return res ?? { message: "No direct Wikipedia summary found for query." };
       }
     },
     {

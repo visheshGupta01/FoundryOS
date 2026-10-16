@@ -314,7 +314,7 @@ export const ApprovalsView: React.FC = () => {
                               <div style={styles.customInputArea} onClick={e => e.stopPropagation()}>
                                 <textarea
                                   rows={2}
-                                  placeholder="Type your strategic instructions, parameters, or requirements here..."
+                                  placeholder=""
                                   value={customAnswers[item.id] || ''}
                                   onChange={e => setCustomAnswers(prev => ({ ...prev, [item.id]: e.target.value }))}
                                   style={styles.customTextarea}

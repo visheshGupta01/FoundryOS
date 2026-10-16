@@ -78,7 +78,7 @@ export const RecentChatsView: React.FC = () => {
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Search chats by prompt or specialist..."
+          placeholder=""
           style={styles.searchInput}
         />
       </div>

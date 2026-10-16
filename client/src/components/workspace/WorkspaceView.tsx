@@ -1,8 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { QuickLaunchCards } from './QuickLaunchCards';
 import { MessageItem } from './MessageItem';
 import { ChatInput } from './ChatInput';
+import { ExecutionBlob } from './ExecutionBlob';
 
 export const WorkspaceView: React.FC = () => {
   const { messages, isExecuting, selectedAgentId, employees, brainData } = useApp();
@@ -13,7 +14,10 @@ export const WorkspaceView: React.FC = () => {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [messages, isExecuting]);
 
@@ -34,7 +38,7 @@ export const WorkspaceView: React.FC = () => {
             <h1 style={styles.heroTitle}>
               Welcome{founderName !== 'Founder' ? `, ${founderName}` : ' Founder'},
             </h1>
-            <p style={styles.heroSubtext}>What can we do for you?</p>
+            <p style={styles.heroSubtext}>What can your autonomous team execute for you today?</p>
 
             <div style={styles.inputDock}>
               <ChatInput />
@@ -58,9 +62,10 @@ export const WorkspaceView: React.FC = () => {
           ))}
 
           {isExecuting && (
-            <ExecutionStepper
+            <ExecutionBlob
               employeeName={employeeName}
-              isLightweight={selectedAgentId === 'foundryos-assistant'}
+              selectedAgentId={selectedAgentId}
+              activeEmployee={activeEmployee}
             />
           )}
         </div>
@@ -70,165 +75,6 @@ export const WorkspaceView: React.FC = () => {
       <ChatInput />
     </div>
   );
-};
-
-const ExecutionStepper: React.FC<{ employeeName: string; isLightweight?: boolean }> = ({ employeeName, isLightweight }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-
-  const steps = isLightweight ? [
-    { tag: 'OPTIMIZER', label: 'Bypassing heavy model pipeline — routing to lightweight agent' },
-    { tag: 'BRAIN:LOOKUP', label: 'Resolving company context & memory cache' },
-    { tag: 'SYNTHESIS', label: 'Formulating direct response' }
-  ] : [
-    { tag: 'MCP:BRAIN', label: 'Ingesting company brain memory vectors & active ICP context' },
-    { tag: 'AGENT:ROUTE', label: `Dispatching execution to ${employeeName}` },
-    { tag: 'MCP:INTEL', label: 'Executing real-time market search & competitor benchmarking' },
-    { tag: 'SCHEMA:VALIDATE', label: 'Synthesizing verified strategic brief & deliverable' }
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentStep(prev => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, isLightweight ? 450 : 1100);
-    return () => clearInterval(timer);
-  }, [steps.length, isLightweight]);
-
-  return (
-    <div style={stepperStyles.container}>
-      <div style={stepperStyles.header}>
-        <div style={stepperStyles.headerLeft}>
-          <span style={stepperStyles.runtimeTag}>{isLightweight ? 'LIGHTWEIGHT RUNTIME' : 'MCP RUNTIME'}</span>
-          <span style={stepperStyles.headerText}>
-            {isLightweight ? 'Normal Agent executing fast-path' : `${employeeName} executing strategy pipeline`}
-          </span>
-        </div>
-        <div style={stepperStyles.spinner} />
-      </div>
-
-      <div style={stepperStyles.stepList}>
-        {steps.map((s, idx) => {
-          const isDone = idx < currentStep;
-          const isCurrent = idx === currentStep;
-          return (
-            <div
-              key={idx}
-              style={{
-                ...stepperStyles.stepItem,
-                opacity: isDone || isCurrent ? 1 : 0.3
-              }}
-            >
-              <span style={{
-                ...stepperStyles.stepTag,
-                color: isCurrent ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                borderColor: isCurrent ? 'var(--glass-border-specular)' : 'var(--glass-border-subtle)'
-              }}>
-                {s.tag}
-              </span>
-              <span
-                style={{
-                  ...stepperStyles.stepLabel,
-                  color: isCurrent ? 'var(--text-primary)' : (isDone ? 'var(--text-secondary)' : 'var(--text-tertiary)'),
-                  fontWeight: isCurrent ? 500 : 400
-                }}
-              >
-                {s.label}
-              </span>
-              {isDone && <span style={stepperStyles.checkMark}>✓</span>}
-              {isCurrent && <span style={stepperStyles.activeDot} />}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const stepperStyles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: '860px',
-    margin: '0 auto 16px auto',
-    width: '100%',
-    padding: '14px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    background: 'var(--glass-bg-card)',
-    border: '1px solid var(--glass-border-subtle)',
-    borderRadius: 'var(--radius-sm)',
-    boxSizing: 'border-box'
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: '8px',
-    borderBottom: '1px solid var(--glass-border-subtle)'
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  runtimeTag: {
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.66rem',
-    fontWeight: 600,
-    letterSpacing: '0.06em',
-    padding: '2px 6px',
-    background: 'var(--glass-bg-surface)',
-    border: '1px solid var(--glass-border-subtle)',
-    borderRadius: 'var(--radius-xs)',
-    color: 'var(--text-secondary)'
-  },
-  headerText: {
-    fontSize: '0.8rem',
-    fontWeight: 500,
-    color: 'var(--text-primary)'
-  },
-  stepList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  stepItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    fontSize: '0.78rem',
-    transition: 'opacity 0.2s ease'
-  },
-  stepTag: {
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.64rem',
-    padding: '1px 5px',
-    borderRadius: 'var(--radius-xs)',
-    border: '1px solid transparent',
-    background: 'var(--glass-bg-surface)'
-  },
-  stepLabel: {
-    flex: 1,
-    lineHeight: '1.4'
-  },
-  checkMark: {
-    color: 'var(--text-secondary)',
-    fontWeight: 600,
-    fontSize: '0.75rem',
-    fontFamily: 'var(--font-mono)'
-  },
-  activeDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    background: 'var(--text-primary)'
-  },
-  spinner: {
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    border: '2px solid var(--glass-border-subtle)',
-    borderTopColor: 'var(--text-primary)',
-    animation: 'spin 0.7s linear infinite'
-  }
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -257,32 +103,32 @@ const styles: Record<string, React.CSSProperties> = {
   },
   orbPrimary: {
     position: 'absolute',
-    top: '38%',
-    left: '50%',
-    width: '500px',
-    height: '500px',
+    top: '35%',
+    left: '48%',
+    width: '520px',
+    height: '520px',
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(167, 139, 250, 0.12) 0%, rgba(56, 189, 248, 0.06) 50%, transparent 70%)',
-    animation: 'gradientOrb 6s ease-in-out infinite',
-    filter: 'blur(60px)'
+    background: 'radial-gradient(circle, rgba(167, 139, 250, 0.16) 0%, rgba(56, 189, 248, 0.08) 45%, transparent 70%)',
+    animation: 'orbFloatA 14s ease-in-out infinite',
+    filter: 'blur(70px)'
   },
   orbSecondary: {
     position: 'absolute',
-    top: '55%',
-    left: '45%',
-    width: '350px',
-    height: '350px',
+    top: '52%',
+    left: '42%',
+    width: '420px',
+    height: '420px',
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(52, 211, 153, 0.08) 0%, rgba(251, 191, 36, 0.04) 50%, transparent 70%)',
-    animation: 'gradientOrb 8s ease-in-out 2s infinite',
-    filter: 'blur(50px)'
+    background: 'radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, rgba(56, 189, 248, 0.06) 50%, transparent 70%)',
+    animation: 'orbFloatB 18s ease-in-out 1.5s infinite',
+    filter: 'blur(60px)'
   },
   landingContent: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    maxWidth: '680px',
+    maxWidth: '720px',
     position: 'relative',
     zIndex: 1
   },
@@ -300,7 +146,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.96rem',
     color: 'var(--text-tertiary)',
     lineHeight: '1.5',
-    marginBottom: '32px',
+    marginBottom: '20px',
     textAlign: 'center',
     animation: 'subtextFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both'
   },
@@ -310,7 +156,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardsArea: {
     width: '100%',
-    animation: 'cardCascade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both'
+    animation: 'cardCascade 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both'
   },
   scrollArea: {
     flex: 1,

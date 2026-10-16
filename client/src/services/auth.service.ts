@@ -31,10 +31,30 @@ export async function signup(credentials: SignupRequest): Promise<LoginResponse>
 }
 
 export function logout(): void {
-    localStorage.removeItem('foundry_token');
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('foundry_token');
+        localStorage.removeItem('foundry_token');
+        localStorage.removeItem('foundry_user_name');
+        localStorage.removeItem('foundry_user_email');
+        window.dispatchEvent(new Event('foundry_auth_changed'));
+
+        if (token && token !== 'foundry-founder-session') {
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            }).catch(() => {});
+        }
+    }
 }
 
 export function isAuthenticated(): boolean {
-    return Boolean(localStorage.getItem('foundry_token'));
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('foundry_token');
+        return Boolean(token && token.trim().length > 0);
+    }
+    return false;
 }
 

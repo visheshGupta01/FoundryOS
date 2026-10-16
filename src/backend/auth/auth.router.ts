@@ -1,6 +1,6 @@
 import { type IncomingMessage, type ServerResponse } from "node:http";
-import { loginUser, getUserFromToken, logoutUser } from "./auth.services.js";
-import type { LoginRequest } from "./auth.types.js";
+import { loginUser, signupUser, getUserFromToken, logoutUser, clearAllUsers } from "./auth.services.js";
+import type { LoginRequest, SignupRequest } from "./auth.types.js";
 
 type ReadJsonBody = <T>() => Promise<T>;
 type SendJson = (res: ServerResponse, statusCode: number, data: unknown) => void;
@@ -17,6 +17,27 @@ export async function handleAuthRoute(
     readJsonBody: ReadJsonBody,
     sendJson: SendJson
 ): Promise<boolean> {
+    if ((url.pathname === "/api/auth/reset" || url.pathname === "/api/auth/clean") && req.method === "POST") {
+        try {
+            const result = await clearAllUsers();
+            sendJson(res, 200, { success: true, message: "All users and sessions cleared.", ...result });
+        } catch (err) {
+            sendJson(res, 500, { success: false, error: String(err) });
+        }
+        return true;
+    }
+
+    if (url.pathname === "/api/auth/signup" && req.method === "POST") {
+        try {
+            const body = await readJsonBody<SignupRequest>();
+            const result = await signupUser(body);
+            sendJson(res, result.success ? 201 : 400, result);
+        } catch {
+            sendJson(res, 500, { success: false, error: "Registration service unavailable." });
+        }
+        return true;
+    }
+
     if (url.pathname === "/api/auth/login" && req.method === "POST") {
         try {
             const credentials = await readJsonBody<LoginRequest>();
@@ -42,4 +63,3 @@ export async function handleAuthRoute(
 
     return false;
 }
-

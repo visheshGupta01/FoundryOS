@@ -14,9 +14,9 @@ describe("MCP Multi-Server Integration", () => {
     await manager.shutdown();
   });
 
-  it("should mount all 7 specialized MCP servers including Slack and Drive", () => {
+  it("should mount all 6 specialized verified MCP servers", () => {
     const servers = manager.listServers();
-    expect(servers.length).toBe(7);
+    expect(servers.length).toBe(6);
 
     const ids = servers.map((s) => s.id);
     expect(ids).toContain("market-intel-mcp");
@@ -24,8 +24,7 @@ describe("MCP Multi-Server Integration", () => {
     expect(ids).toContain("growth-gtm-mcp");
     expect(ids).toContain("foundry-brain-mcp");
     expect(ids).toContain("document-archive-mcp");
-    expect(ids).toContain("slack-mcp");
-    expect(ids).toContain("google-drive-mcp");
+    expect(ids).toContain("integration-hub-mcp");
   });
 
   it("should register tools across all 4 servers in toolRegistry", () => {
