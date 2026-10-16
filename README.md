@@ -1,16 +1,16 @@
 # FoundryOS
 
 <p align="center">
-  <strong>Autonomous AI Specialist Team & Enterprise Operations Platform</strong>
+  <strong>Local-First Autonomous AI Specialist Team & Enterprise Operations Platform</strong>
 </p>
 
-FoundryOS coordinates specialized autonomous AI agents, semantic knowledge bases ("Company Brain" with `pgvector`), Model Context Protocol (MCP) tool integrations, Human-In-The-Loop (HITL) steering, and multi-provider LLM routing (OpenAI GPT-4o, local Ollama fallback, and TrueForge agents).
+FoundryOS coordinates specialized autonomous AI agents, semantic knowledge bases ("Company Brain" with `pgvector`), Model Context Protocol (MCP) tool integrations, Human-In-The-Loop (HITL) steering, and local-first LLM execution powered natively by **Ollama** (`llama3.2:1b`, `nomic-embed-text`) and the **TrueForge Agent Runtime**.
 
 ---
 
 ## Architecture Overview
 
-FoundryOS operates on a multi-tier autonomous execution engine designed for reliable enterprise workflows:
+FoundryOS operates on a local-first, privacy-focused autonomous execution engine designed for reliable enterprise workflows without external LLM dependencies:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -37,10 +37,11 @@ FoundryOS operates on a multi-tier autonomous execution engine designed for reli
 └──────────────────┬──────┘ └────────┬────────┘ └───────┬─────────────────┘
                    │                 │                  │
 ┌──────────────────▼─────────────────▼──────────────────▼─────────────────┐
-│                       Multi-Provider LLM Router                         │
-│   • Primary: OpenAI GPT-4o / GPT-4o-mini (Structured JSON outputs)      │
-│   • Fallback: Local Ollama (llama3.2:1b, nomic-embed-text)              │
-│   • Cloud Sessions: TrueForge Agent Runtime                             │
+│                        Local LLM Runtime                                │
+│   • Primary Engine: Local Ollama (llama3.2:1b)                          │
+│   • Local Embeddings: nomic-embed-text via Ollama (1536 dims)           │
+│   • Cloud Session & Turn Harness: TrueForge Agent Runtime               │
+│   • Fallback: Deterministic graceful execution engine                   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,6 +66,7 @@ FoundryOS operates on a multi-tier autonomous execution engine designed for reli
 
 ### 3. Company Brain (7-Layer Semantic RAG & pgvector)
 - **Vector Indexing**: PostgreSQL with `pgvector` HNSW indexes for rapid cosine similarity retrieval.
+- **Local Embeddings**: Generates dense semantic vectors locally via Ollama `nomic-embed-text`.
 - **Token-Budget-Aware Context Engine**: Assembles role-tailored context packages within dynamic LLM token budgets.
 - **Institutional Memory**: Automatically logs validated learnings, decisions, and outcomes to continuously improve team context.
 
@@ -76,10 +78,10 @@ FoundryOS operates on a multi-tier autonomous execution engine designed for reli
   - **Brain Memory Server**: Direct semantic vector retrieval across institutional knowledge.
   - **Integration Hub Server**: Coordinates external service connections, webhooks, and third-party integrations.
 
-### 5. Multi-Provider LLM Engine
-- **OpenAI**: GPT-4o-mini for low-latency tasks and GPT-4o for deep strategic reasoning with native JSON Schema output.
-- **Local Ollama Fallback**: Run fully offline with `llama3.2:1b` for chat and `nomic-embed-text` for embeddings.
-- **TrueForge Agent Runtime**: Cloud session and turn management for persistent autonomous workflows.
+### 5. Local-First LLM Architecture
+- **Complete Privacy & Zero API Cost**: Runs on your infrastructure with local **Ollama** instances (`llama3.2:1b`, `gemma`, etc.).
+- **TrueForge Agent Runtime**: Agent turn orchestration and persistent session state.
+- **Deterministic Resilience**: Graceful fallback handling if local model instances undergo maintenance or restarts.
 
 ### 6. Modern Web UI & Authentication
 - **Landing Experience**: Interactive Canvas hero, Live Agent Simulator, ROI Calculator, and Apple-inspired Bento Grid showcase.
@@ -125,7 +127,7 @@ FoundryOs/
 │   │   ├── hitl/               # Human-In-The-Loop approval lifecycle
 │   │   ├── integrations/       # Integration store & credential vault
 │   │   ├── mcp/                # MCP client manager & built-in servers
-│   │   ├── models/             # LLM resolver, OpenAI client, Ollama client
+│   │   ├── models/             # LLM resolver & Ollama client
 │   │   ├── plugins/            # Extensible tool registry & builtin plugins
 │   │   ├── queue/              # BullMQ queue managers & worker jobs
 │   │   ├── routes/             # REST API routers & endpoint handlers
@@ -140,7 +142,7 @@ FoundryOs/
 │   ├── backend/                # API router & controller tests
 │   ├── brain/                  # Context builder & 7-layer memory tests
 │   ├── mcp/                    # MCP client & server integration tests
-│   └── models/                 # Ollama & OpenAI LLM resolver tests
+│   └── models/                 # Ollama LLM resolver tests
 ├── .env.example                # Environment variable configuration template
 ├── package.json
 └── tsconfig.json
@@ -156,8 +158,7 @@ FoundryOs/
 - **npm**: `>= 9.0.0`
 - **PostgreSQL**: `>= 15` with `pgvector` (`CREATE EXTENSION IF NOT EXISTS vector;`)
 - **Redis**: `>= 6.0` (for BullMQ queues)
-- **OpenAI API Key** (Recommended): [platform.openai.com](https://platform.openai.com)
-- **Ollama** (Optional for local execution):
+- **Ollama**:
   ```bash
   ollama pull llama3.2:1b
   ollama pull nomic-embed-text
@@ -181,16 +182,17 @@ FoundryOs/
    ```bash
    cp .env.example .env
    ```
-   Update `.env` with your database and LLM credentials:
+   Update `.env` to match your local setup:
    ```env
    NODE_ENV=development
    PORT=3000
    DATABASE_URL=postgresql://foundry:foundry_pass@localhost:5432/foundry_os
    REDIS_URL=redis://localhost:6379
-   LLM_PROVIDER=openai
-   OPENAI_API_KEY=your-openai-api-key
-   OPENAI_MODEL=gpt-4o-mini
-   OPENAI_STRATEGY_MODEL=gpt-4o
+   LLM_PROVIDER=ollama
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=llama3.2:1b
+   EMBEDDING_MODEL=nomic-embed-text
+   EMBEDDING_DIMENSIONS=1536
    ```
 
 4. **Initialize database schema**:

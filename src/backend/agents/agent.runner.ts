@@ -91,7 +91,7 @@ export interface AgentRunResult {
   3. Context assembly → pull Company Brain data, build rich prompt
   4. Document injection → attach uploaded files into prompt
   5. Tool execution → run MCP tools for real-time data
-  6. LLM generation → call the active provider (OpenAI or Ollama)
+  6. LLM generation → call the active provider (Ollama)
   7. Memory proposal → store validated learnings for future context
   8. Credit deduction → track token consumption
   
