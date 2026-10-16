@@ -15,10 +15,11 @@ export function formatAgentOutputToMarkdown(output: unknown): string {
 
   if (data.advice) {
     const parts: string[] = [];
-    if (data.summary) {
+    const trimmedAdvice = String(data.advice).trim();
+    if (data.summary && !trimmedAdvice.startsWith('#')) {
       parts.push(`### ${data.summary}\n`);
     }
-    parts.push(data.advice);
+    parts.push(trimmedAdvice);
     if (Array.isArray(data.specialistContributions) && data.specialistContributions.length > 0) {
       parts.push('\n\n#### 👥 Specialist Synchronizations:');
       data.specialistContributions.forEach(sc => {

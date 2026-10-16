@@ -106,10 +106,6 @@ interface NormalizedEmployee {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <div style={styles.badge}>
-          <span style={styles.badgeDot} />
-          <span>AUTONOMOUS SPECIALISTS</span>
-        </div>
         <h1 style={styles.title}>AI Agents & Specialists</h1>
         <p style={styles.subtitle}>
           Your coordinated AI specialist team. Each specialist commands dedicated tools, context-window memory, and specialized execution playbooks.

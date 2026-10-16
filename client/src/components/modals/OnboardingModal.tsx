@@ -1,14 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Icons } from '../common/Icons';
 import type { BrainData } from '../../types';
-
-/* ──────────────────────────────────────────────────────────────
-   QUESTION DEFINITIONS – 10 total, first 5 are mandatory.
-   Each question maps to a BrainData field so the Company Brain
-   gets pre-populated the moment the founder finishes onboarding.
-   ────────────────────────────────────────────────────────────── */
 
 interface OnboardingQuestion {
   id: string;
@@ -25,150 +18,244 @@ const QUESTIONS: OnboardingQuestion[] = [
   {
     id: 'q1',
     brainField: 'name',
-    label: "What's your company name?",
-    placeholder: 'e.g. Acme AI',
-    hint: 'This anchors every piece of content the AI generates for you.',
+    label: "What's your company or project name?",
+    placeholder: '',
+    hint: 'Anchors every deliverable, campaign, and strategy the agent team generates.',
     required: true,
-    icon: <Icons.Brain size={16} style={{ color: '#a78bfa' }} />
+    icon: <Icons.Brain size={18} style={{ color: '#a78bfa' }} />
   },
   {
     id: 'q2',
     brainField: 'oneLiner',
-    label: 'Describe what you do in one sentence.',
-    placeholder: 'e.g. We help SaaS founders automate their marketing with AI agents.',
-    hint: 'Your elevator pitch – the AI uses this as the core positioning anchor.',
+    label: 'What does your product do in one sentence?',
+    placeholder: '',
+    hint: 'Your core positioning anchor used across landing page copy and pitches.',
     required: true,
     multiline: true,
-    icon: <Icons.Target size={16} style={{ color: '#38bdf8' }} />
+    icon: <Icons.Target size={18} style={{ color: '#38bdf8' }} />
   },
   {
     id: 'q3',
     brainField: 'audience',
-    label: 'Who is your ideal customer?',
-    placeholder: 'e.g. Early-stage B2B SaaS founders with $0–$1M ARR',
-    hint: 'Defines your ICP so every campaign targets the right buyer persona.',
+    label: 'Who is your ideal customer profile (ICP)?',
+    placeholder: '',
+    hint: 'Ensures every campaign targets the right persona and buyer pain points.',
     required: true,
     multiline: true,
-    icon: <Icons.Employees size={16} style={{ color: '#34d399' }} />
+    icon: <Icons.Employees size={18} style={{ color: '#34d399' }} />
   },
   {
     id: 'q4',
     brainField: 'problem',
-    label: "What core problem do you solve?",
-    placeholder: "e.g. Founders waste 60% of their time on repetitive growth experiments.",
-    hint: 'The pain point your product eliminates – this drives all messaging.',
+    label: 'What core pain point does your product solve?',
+    placeholder: '',
+    hint: 'The primary friction your product eliminates — drives high-converting angles.',
     required: true,
     multiline: true,
-    icon: <Icons.Shield size={16} style={{ color: '#f59e0b' }} />
+    icon: <Icons.Shield size={18} style={{ color: '#f59e0b' }} />
   },
   {
     id: 'q5',
     brainField: 'competitors',
-    label: 'Who are your main competitors?',
-    placeholder: 'e.g. HubSpot, Jasper, traditional agencies',
-    hint: 'Used for competitive battlecards and differentiation strategies.',
+    label: 'Who are your main competitors or alternatives?',
+    placeholder: '',
+    hint: 'Used for automated competitor teardowns, battlecards, and objection scripts.',
     required: true,
-    icon: <Icons.Reports size={16} style={{ color: '#ef4444' }} />
+    icon: <Icons.Reports size={18} style={{ color: '#ef4444' }} />
   },
   {
     id: 'q6',
     brainField: 'website',
-    label: "What's your website URL?",
-    placeholder: 'e.g. https://acme.ai',
-    hint: 'Helps the AI reference your real brand when generating content.',
+    label: "What's your website or landing URL?",
+    placeholder: '',
+    hint: 'Enables real-time domain inspection and authentic brand reference.',
     required: false,
-    icon: <Icons.Sparkles size={16} style={{ color: '#818cf8' }} />
+    icon: <Icons.Sparkles size={18} style={{ color: '#818cf8' }} />
   },
   {
     id: 'q7',
     brainField: 'tone',
-    label: 'Describe your brand voice.',
-    placeholder: 'e.g. Confident, witty, data-backed, human',
-    hint: 'Ensures every piece of copy sounds authentically you.',
+    label: 'How should your brand voice sound?',
+    placeholder: '',
+    hint: 'Sets the stylistic personality for copy generated across channels.',
     required: false,
-    icon: <Icons.Sparkles size={16} style={{ color: '#c084fc' }} />
+    icon: <Icons.Sparkles size={18} style={{ color: '#c084fc' }} />
   },
   {
     id: 'q8',
     brainField: 'avoidTone',
-    label: 'Any words or tones to avoid?',
-    placeholder: "e.g. Corporate fluff, buzzwords, aggressive sales jargon",
-    hint: 'Blacklisted patterns the AI will never use in your content.',
+    label: 'What phrases or tones should the AI avoid?',
+    placeholder: '',
+    hint: 'Strict negative constraints filtered from all copy generation.',
     required: false,
-    icon: <Icons.Shield size={16} style={{ color: '#fb7185' }} />
+    icon: <Icons.Shield size={18} style={{ color: '#fb7185' }} />
   },
   {
     id: 'q9',
     brainField: 'pricing',
-    label: 'What does your pricing look like?',
-    placeholder: 'e.g. $49/mo Starter, $149/mo Growth, Custom Enterprise',
-    hint: 'Used for competitive analysis and objection-handling strategies.',
+    label: 'What is your pricing or business model?',
+    placeholder: '',
+    hint: 'Helps specialists benchmark CAC/LTV and formulate monetization funnels.',
     required: false,
-    icon: <Icons.Reports size={16} style={{ color: '#2dd4bf' }} />
+    icon: <Icons.Reports size={18} style={{ color: '#2dd4bf' }} />
   },
   {
     id: 'q10',
     brainField: 'goal',
-    label: 'What is your primary growth goal?',
-    placeholder: 'e.g. Reach $1M ARR in 12 months through organic inbound',
-    hint: 'The north-star metric that guides all strategic recommendations.',
+    label: 'What is your primary 12-month growth milestone?',
+    placeholder: '',
+    hint: 'The north-star metric guiding autonomous marketing roadmaps.',
     required: false,
     multiline: true,
-    icon: <Icons.Target size={16} style={{ color: '#fbbf24' }} />
+    icon: <Icons.Target size={18} style={{ color: '#fbbf24' }} />
   }
 ];
 
-/* ──────────────────────────────────────────────────────────────
-   TOUR STEPS – game-style spotlight walkthrough.
-   Each step targets a DOM element by CSS selector and shows
-   an explanatory tooltip while blurring everything else.
-   ────────────────────────────────────────────────────────────── */
-
-interface TourStep {
-  selector: string;
+interface TourSlide {
+  badge: string;
+  badgeColor: string;
   title: string;
-  body: string;
-  position: 'right' | 'bottom' | 'left' | 'top';
+  description: string;
+  bullets: string[];
+  graphic: React.ReactNode;
 }
 
-const TOUR_STEPS: TourStep[] = [
+const TOUR_SLIDES: TourSlide[] = [
   {
-    selector: '[data-tour="sidebar"]',
-    title: 'Navigation Hub',
-    body: 'Your command center. Switch between AI chat, Company Brain, approvals, integrations, and more. Every section is one click away.',
-    position: 'right'
+    badge: 'AUTONOMOUS MARKETING TEAM',
+    badgeColor: '#38bdf8',
+    title: '4 Coordinated AI Specialists',
+    description: 'FoundryOS does not give you a generic chatbot. You get a coordinated executive marketing department working in synergy.',
+    bullets: [
+      'Maya Lin (Market Research) — Macro trend analysis & ICP TAM expansion',
+      'Julian Vance (Competitor Intel) — Battlecards, pricing teardowns & weak spots',
+      'Sarah Chen (Chief Marketing Strategist) — Core positioning & GTM strategy',
+      'Marcus Brody (Funnel Architect) — High-converting landing copy & ad creative'
+    ],
+    graphic: (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
+        <div style={{ padding: '10px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#38bdf8' }}>Maya Lin</div>
+          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Market Research Analyst</div>
+        </div>
+        <div style={{ padding: '10px', background: 'rgba(248, 113, 113, 0.08)', border: '1px solid rgba(248, 113, 113, 0.25)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f87171' }}>Julian Vance</div>
+          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Competitor Intelligence</div>
+        </div>
+        <div style={{ padding: '10px', background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.25)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#a78bfa' }}>Sarah Chen</div>
+          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Chief Marketing Strategist</div>
+        </div>
+        <div style={{ padding: '10px', background: 'rgba(52, 211, 153, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#34d399' }}>Marcus Brody</div>
+          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Funnel & Growth Architect</div>
+        </div>
+      </div>
+    )
   },
   {
-    selector: '[data-tour="header"]',
-    title: 'Mission Control Bar',
-    body: 'See your active agent, credit balance, and quick actions. Toggle dark/light mode and re-launch this tour anytime.',
-    position: 'bottom'
+    badge: 'VECTOR MEMORY RAG',
+    badgeColor: '#a78bfa',
+    title: 'Institutional Company Brain',
+    description: 'The positioning answers you provided are pre-computed into vector embeddings. Every specialist recalls your context automatically.',
+    bullets: [
+      'Zero repetitive prompting — agents know your target audience and core problem',
+      'PostgreSQL pgvector memory store with nomic-embed-text embeddings',
+      'Persistent institutional memory accessible in Settings at any time',
+      'Dynamic multi-document injection for contextual accuracy'
+    ],
+    graphic: (
+      <div style={{ padding: '16px', background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#a78bfa' }}>Brain Knowledge Graph</span>
+          <span style={{ fontSize: '0.7rem', color: '#34d399', fontFamily: 'monospace' }}>● Live Sync</span>
+        </div>
+        <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px' }}>
+          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #a78bfa 0%, #38bdf8 100%)' }} />
+        </div>
+        <div style={{ fontSize: '0.7rem', color: '#a1a1aa', lineHeight: 1.4 }}>
+          Embeddings calculated • Verified against ICP & competitors • Injected into prompts
+        </div>
+      </div>
+    )
   },
   {
-    selector: '[data-tour="chat-area"]',
-    title: 'AI Workspace',
-    body: 'This is where the magic happens. Chat with specialized AI executives who understand your startup context. Attach files, review artifacts, and approve high-stakes actions.',
-    position: 'left'
+    badge: 'HUMAN-IN-THE-LOOP',
+    badgeColor: '#fbbf24',
+    title: 'Founder Strategic Steering',
+    description: 'You maintain absolute executive authority. High-stakes strategic deliverables pause for founder verification before committing.',
+    bullets: [
+      'Steering gates: Select recommended strategic options or enter custom direction',
+      'Approve, redirect, or reject autonomous plans with feedback',
+      'Full audit trail and governance log preserved in Approvals',
+      'No unintended campaign execution without your confirmation'
+    ],
+    graphic: (
+      <div style={{ padding: '14px', background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+          <Icons.Shield size={14} style={{ color: '#fbbf24' }} />
+          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#fbbf24' }}>Human-In-The-Loop Steering Gate</span>
+        </div>
+        <div style={{ fontSize: '0.72rem', color: '#ffffff', fontWeight: 600, marginBottom: '6px' }}>Select GTM Strategy:</div>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.66rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>PLG Self-Serve ✓</span>
+          <span style={{ fontSize: '0.66rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#a1a1aa' }}>Enterprise ABM</span>
+        </div>
+      </div>
+    )
   },
   {
-    selector: '[data-tour="brain-btn"]',
-    title: 'Company Brain',
-    body: "Your startup's institutional memory. The answers you just provided live here. Edit anytime – every AI response draws from this context automatically.",
-    position: 'right'
+    badge: 'CONNECTED ECOSYSTEM',
+    badgeColor: '#34d399',
+    title: 'Zero-Secret MCP Tooling & Archive',
+    description: 'Connect your workspace to Slack, Google Drive, live DuckDuckGo web search, and instant PDF report generation.',
+    bullets: [
+      'Model Context Protocol (MCP) servers run directly alongside agents',
+      'Real-time competitor search and live URL reading via WebSearch plugin',
+      'One-click PDF deliverable export formatted for stakeholders',
+      'Zero credential leaks — private tokens stored in local isolated vault'
+    ],
+    graphic: (
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>Slack MCP</div>
+          <div style={{ fontSize: '0.64rem', color: '#34d399' }}>Live Alerts</div>
+        </div>
+        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>Google Drive</div>
+          <div style={{ fontSize: '0.64rem', color: '#38bdf8' }}>Cloud Sync</div>
+        </div>
+        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>PDF Vault</div>
+          <div style={{ fontSize: '0.64rem', color: '#a78bfa' }}>Deliverables</div>
+        </div>
+      </div>
+    )
   },
   {
-    selector: '[data-tour="employees-btn"]',
-    title: 'AI Employees',
-    body: 'Meet your autonomous marketing department: Market Research, Competitive Intel, Brand Strategy, and Funnel Architecture specialists working in synergy.',
-    position: 'right'
+    badge: 'EXECUTION READY',
+    badgeColor: '#818cf8',
+    title: 'Intelligent Quotas & Fast-Path',
+    description: 'Balanced hybrid intelligence: 100% daily compute capacity with lightweight fast-path optimization for instant responses.',
+    bullets: [
+      'Fast-path routing skips heavy LLM steps for quick answers and assistance',
+      'Transparent token metrics and cache hit ratio on every turn',
+      'Full account, billing, model quota, and brain management in Settings',
+      'Allowance resets automatically daily at midnight UTC'
+    ],
+    graphic: (
+      <div style={{ padding: '16px', background: 'rgba(129, 140, 248, 0.08)', border: '1px solid rgba(129, 140, 248, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#818cf8' }}>Daily Execution Quota</span>
+          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#ffffff', fontWeight: 700 }}>100% Capacity</span>
+        </div>
+        <div style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>
+          Full Allocation • Local Ollama + Cloud Hybrid • Ready for Launch
+        </div>
+      </div>
+    )
   }
 ];
-
-/* ──────────────────────────────────────────────────────────────
-   ONBOARDING MODAL COMPONENT
-   ────────────────────────────────────────────────────────────── */
-
-type Phase = 'questions' | 'tour';
 
 export const OnboardingModal: React.FC = () => {
   const {
@@ -180,19 +267,14 @@ export const OnboardingModal: React.FC = () => {
     brainData
   } = useApp();
 
-  const [phase, setPhase] = useState<Phase>('questions');
+  const [phase, setPhase] = useState<'questions' | 'tour'>('questions');
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [shakeField, setShakeField] = useState(false);
-  const [tourStep, setTourStep] = useState(0);
-  const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [tourSlideIndex, setTourSlideIndex] = useState(0);
+  const [isSavingBrain, setIsSavingBrain] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
-  const mandatoryCount = QUESTIONS.filter(q => q.required).length;
-  const answeredMandatory = QUESTIONS.filter(q => q.required && answers[q.id]?.trim()).length;
-
-  /* ── Pre-fill existing brainData when opening ── */
   useEffect(() => {
     if (isOnboardingOpen && brainData) {
       const initial: Record<string, string> = {};
@@ -204,14 +286,92 @@ export const OnboardingModal: React.FC = () => {
     }
   }, [isOnboardingOpen, brainData]);
 
-  /* ── Focus input when question changes ── */
   useEffect(() => {
     if (phase === 'questions' && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 120);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [currentQ, phase]);
 
-  /* ── Keyboard navigation ── */
+  const currentQuestion = QUESTIONS[currentQ];
+  const isMandatoryPhase = currentQ < 5;
+  const isAtQuestionFive = currentQ === 4;
+  const isOptionalPhase = currentQ >= 5;
+
+  const saveBrainAndProceed = async (targetPhase: 'tour' | 'optional') => {
+    setIsSavingBrain(true);
+    const newBrain: BrainData = { ...brainData };
+    QUESTIONS.forEach(question => {
+      const val = answers[question.id]?.trim();
+      if (val) {
+        (newBrain as unknown as Record<string, unknown>)[question.brainField] = val;
+      }
+    });
+
+    setBrainData(newBrain);
+    try {
+      await saveBrainData(newBrain);
+    } catch {
+      // save fallback
+    }
+    setIsSavingBrain(false);
+
+    if (targetPhase === 'tour') {
+      setPhase('tour');
+      setTourSlideIndex(0);
+    } else {
+      setCurrentQ(5);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestion.required && !answers[currentQuestion.id]?.trim()) {
+      setShakeField(true);
+      setTimeout(() => setShakeField(false), 500);
+      return;
+    }
+
+    if (currentQ < QUESTIONS.length - 1) {
+      setCurrentQ(prev => prev + 1);
+    } else {
+      saveBrainAndProceed('tour');
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (currentQ > 0) setCurrentQ(prev => prev - 1);
+  };
+
+  const finishTourAndEnter = () => {
+    try {
+      localStorage.setItem('foundryos_onboarded_v1', 'true');
+    } catch {
+      // storage fallback
+    }
+    setIsOnboardingOpen(false);
+    setActiveView('chat');
+  };
+
+  const handleNextSlide = () => {
+    if (tourSlideIndex < TOUR_SLIDES.length - 1) {
+      setTourSlideIndex(prev => prev + 1);
+    } else {
+      finishTourAndEnter();
+    }
+  };
+
+  const handlePrevSlide = () => {
+    if (tourSlideIndex > 0) setTourSlideIndex(prev => prev - 1);
+  };
+
+  const handleSkipAll = () => {
+    try {
+      localStorage.setItem('foundryos_onboarded_v1', 'true');
+    } catch {
+      // storage fallback
+    }
+    setIsOnboardingOpen(false);
+  };
+
   useEffect(() => {
     if (!isOnboardingOpen) return;
 
@@ -229,288 +389,167 @@ export const OnboardingModal: React.FC = () => {
       if (phase === 'tour') {
         if (e.key === 'ArrowRight' || e.key === 'Enter') {
           e.preventDefault();
-          handleNextTourStep();
+          handleNextSlide();
         }
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
-          handlePrevTourStep();
+          handlePrevSlide();
         }
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isOnboardingOpen, phase, currentQ, tourStep, answers]);
-
-  /* ── Tour spotlight positioning ── */
-  const positionSpotlight = useCallback(() => {
-    const step = TOUR_STEPS[tourStep];
-    if (!step) return;
-
-    const el = document.querySelector(step.selector);
-    if (!el) {
-      setSpotlightRect(null);
-      return;
-    }
-
-    const rect = el.getBoundingClientRect();
-    setSpotlightRect(rect);
-
-    const pad = 16;
-    const tooltipW = 340;
-    const tooltipH = 180;
-    let top = 0;
-    let left = 0;
-
-    switch (step.position) {
-      case 'right':
-        top = rect.top + rect.height / 2 - tooltipH / 2;
-        left = rect.right + pad;
-        break;
-      case 'left':
-        top = rect.top + rect.height / 2 - tooltipH / 2;
-        left = rect.left - tooltipW - pad;
-        break;
-      case 'bottom':
-        top = rect.bottom + pad;
-        left = rect.left + rect.width / 2 - tooltipW / 2;
-        break;
-      case 'top':
-        top = rect.top - tooltipH - pad;
-        left = rect.left + rect.width / 2 - tooltipW / 2;
-        break;
-    }
-
-    top = Math.max(16, Math.min(top, window.innerHeight - tooltipH - 16));
-    left = Math.max(16, Math.min(left, window.innerWidth - tooltipW - 16));
-
-    setTooltipStyle({ top, left, width: tooltipW });
-  }, [tourStep]);
-
-  useEffect(() => {
-    if (phase !== 'tour') return;
-    positionSpotlight();
-    const onResize = () => positionSpotlight();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [phase, tourStep, positionSpotlight]);
+  }, [isOnboardingOpen, phase, currentQ, tourSlideIndex, answers]);
 
   if (!isOnboardingOpen) return null;
 
-  /* ── Handlers ── */
-  const q = QUESTIONS[currentQ];
-
-  const handleAnswerChange = (val: string) => {
-    setAnswers(prev => ({ ...prev, [q.id]: val }));
-  };
-
-  const handleNextQuestion = () => {
-    if (q.required && !answers[q.id]?.trim()) {
-      setShakeField(true);
-      setTimeout(() => setShakeField(false), 500);
-      return;
-    }
-    if (currentQ < QUESTIONS.length - 1) {
-      setCurrentQ(prev => prev + 1);
-    } else {
-      finishQuestions();
-    }
-  };
-
-  const handlePrevQuestion = () => {
-    if (currentQ > 0) setCurrentQ(prev => prev - 1);
-  };
-
-  const finishQuestions = async () => {
-    const newBrain: BrainData = { ...brainData };
-    QUESTIONS.forEach(question => {
-      const val = answers[question.id]?.trim();
-      if (val) {
-        (newBrain as any)[question.brainField] = val;
-      }
-    });
-    setBrainData(newBrain);
-    try {
-      await saveBrainData(newBrain);
-    } catch {}
-    setPhase('tour');
-    setTourStep(0);
-  };
-
-  const handleNextTourStep = () => {
-    if (tourStep < TOUR_STEPS.length - 1) {
-      setTourStep(prev => prev + 1);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handlePrevTourStep = () => {
-    if (tourStep > 0) setTourStep(prev => prev - 1);
-  };
-
-  const handleComplete = () => {
-    try {
-      localStorage.setItem('foundryos_onboarded_v1', 'true');
-    } catch {}
-    setIsOnboardingOpen(false);
-    setActiveView('chat');
-  };
-
-  const handleSkipAll = () => {
-    try {
-      localStorage.setItem('foundryos_onboarded_v1', 'true');
-    } catch {}
-    setIsOnboardingOpen(false);
-  };
-
-  /* ── Progress computation ── */
-  const questionProgress = ((currentQ + 1) / QUESTIONS.length) * 100;
-  const isLastQ = currentQ === QUESTIONS.length - 1;
-
-  /* ────────────────────────────────────────────────────────────
-     PHASE 1: QUESTIONNAIRE
-     ──────────────────────────────────────────────────────────── */
   if (phase === 'questions') {
+    const answeredCount = QUESTIONS.slice(0, 5).filter(q => answers[q.id]?.trim()).length;
+    const progressPercent = ((currentQ + 1) / QUESTIONS.length) * 100;
+
     return (
-      <div style={s.backdrop}>
-        <div style={s.dialog} onClick={e => e.stopPropagation()}>
-          {/* Shimmer progress bar */}
-          <div style={s.progressTrack}>
-            <div
-              style={{
-                ...s.progressFill,
-                width: `${questionProgress}%`
-              }}
-            />
+      <div style={styles.backdrop}>
+        <div style={styles.dialog} onClick={e => e.stopPropagation()}>
+          <div style={styles.progressBar}>
+            <div style={{ ...styles.progressFill, width: `${progressPercent}%` }} />
           </div>
 
-          {/* Top bar */}
-          <div style={s.topBar}>
-            <div style={s.topLeft}>
-              <span style={s.logoMark}>F</span>
-              <span style={s.logoText}>FoundryOS Setup</span>
+          <div style={styles.topRow}>
+            <div style={styles.topLeft}>
+              <div style={styles.logoBadge}>F</div>
+              <div>
+                <span style={styles.logoTitle}>FoundryOS Strategic Setup</span>
+                <span style={styles.stepIndicator}>
+                  {isMandatoryPhase ? 'Core Positioning (5 Required Questions)' : 'Extended Context (Optional 5 Questions)'}
+                </span>
+              </div>
             </div>
-            <div style={s.topRight}>
+
+            <div style={styles.topRight}>
+              <span style={styles.countBadge}>
+                {currentQ + 1} / {QUESTIONS.length}
+              </span>
               <button
                 type="button"
-                onClick={() => {
-                  setPhase('tour');
-                  setTourStep(0);
-                }}
-                style={s.tourLinkBtn}
-                title="Skip questions and take the feature tour"
+                onClick={handleSkipAll}
+                style={styles.skipBtn}
+                title="Skip setup and open workspace"
               >
-                Tour Walkthrough →
-              </button>
-              <span style={s.stepLabel}>
-                <span style={s.stepCurrent}>{currentQ + 1}</span>
-                <span style={s.stepDiv}>/</span>
-                <span style={s.stepTotal}>{QUESTIONS.length}</span>
-              </span>
-              <button type="button" onClick={handleSkipAll} style={s.skipBtn}>
-                Skip
+                Skip ✕
               </button>
             </div>
           </div>
 
-          {/* Mandatory badge */}
-          <div style={s.mandatoryBar}>
-            <div style={s.mandatoryPill}>
-              <div
-                style={{
-                  ...s.mandatoryFillInner,
-                  width: `${(answeredMandatory / mandatoryCount) * 100}%`
-                }}
-              />
-              <span style={s.mandatoryText}>
-                {answeredMandatory}/{mandatoryCount} required fields
-              </span>
-            </div>
-            {q.required && (
-              <span style={s.requiredTag}>Required</span>
-            )}
-            {!q.required && (
-              <span style={s.optionalTag}>Optional</span>
-            )}
-          </div>
-
-          {/* Question card */}
-          <div
-            key={q.id}
-            style={{
-              ...s.questionCard,
-              animation: 'questionFadeIn 0.35s ease-out'
-            }}
-          >
-            <div style={s.questionIconRow}>
-              {q.icon}
-              <span style={s.questionNumber}>Q{currentQ + 1}</span>
-            </div>
-
-            <h2 style={s.questionLabel}>{q.label}</h2>
-            <p style={s.questionHint}>{q.hint}</p>
-
-            {q.multiline ? (
-              <textarea
-                ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                value={answers[q.id] || ''}
-                onChange={e => handleAnswerChange(e.target.value)}
-                placeholder={q.placeholder}
-                rows={3}
-                style={{
-                  ...s.input,
-                  ...s.textarea,
-                  ...(shakeField ? s.inputShake : {})
-                }}
-              />
+          <div style={styles.phaseAlert}>
+            {isMandatoryPhase ? (
+              <div style={styles.alertMandatory}>
+                <Icons.Target size={14} style={{ color: '#38bdf8' }} />
+                <span>Question {currentQ + 1} of 5 required • {answeredCount}/5 core questions answered</span>
+              </div>
             ) : (
-              <input
-                ref={inputRef as React.RefObject<HTMLInputElement>}
-                type="text"
-                value={answers[q.id] || ''}
-                onChange={e => handleAnswerChange(e.target.value)}
-                placeholder={q.placeholder}
-                style={{
-                  ...s.input,
-                  ...(shakeField ? s.inputShake : {})
-                }}
-              />
+              <div style={styles.alertOptional}>
+                <Icons.Sparkles size={14} style={{ color: '#a78bfa' }} />
+                <span>Optional Question {currentQ - 4} of 5 • You can save to Brain anytime below</span>
+              </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div style={s.footer}>
-            <div style={s.dotsRow}>
-              {QUESTIONS.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    if (q.required && !answers[q.id]?.trim() && idx > currentQ) return;
-                    setCurrentQ(idx);
-                  }}
+          <div key={currentQuestion.id} style={styles.questionCard}>
+            <div style={styles.questionHeader}>
+              <div style={styles.questionIconWrap}>{currentQuestion.icon}</div>
+              <div>
+                <h2 style={styles.questionLabel}>{currentQuestion.label}</h2>
+                <p style={styles.questionHint}>{currentQuestion.hint}</p>
+              </div>
+            </div>
+
+            <div style={styles.inputWrap}>
+              {currentQuestion.multiline ? (
+                <textarea
+                  ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={e => setAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                  placeholder={currentQuestion.placeholder}
+                  rows={3}
                   style={{
-                    ...s.dot,
-                    backgroundColor: idx < currentQ ? '#ffffff'
-                      : idx === currentQ ? '#ffffff'
-                      : answers[QUESTIONS[idx].id]?.trim() ? 'rgba(255,255,255,0.5)'
-                      : 'rgba(255,255,255,0.12)',
-                    width: idx === currentQ ? '20px' : '6px'
+                    ...styles.textarea,
+                    ...(shakeField ? styles.inputShake : {})
                   }}
                 />
-              ))}
+              ) : (
+                <input
+                  ref={inputRef as React.RefObject<HTMLInputElement>}
+                  type="text"
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={e => setAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                  placeholder={currentQuestion.placeholder}
+                  style={{
+                    ...styles.input,
+                    ...(shakeField ? styles.inputShake : {})
+                  }}
+                />
+              )}
             </div>
+          </div>
 
-            <div style={s.navBtns}>
+          <div style={styles.footerRow}>
+            <div style={styles.footerLeft}>
               {currentQ > 0 && (
-                <button type="button" onClick={handlePrevQuestion} style={s.prevBtn}>
+                <button type="button" onClick={handlePrevQuestion} style={styles.backBtn}>
                   ← Back
                 </button>
               )}
-              <button type="button" onClick={handleNextQuestion} style={s.nextBtn}>
-                {isLastQ ? '✨ Start Tour' : 'Continue →'}
-              </button>
+
+              {isOptionalPhase && (
+                <button
+                  type="button"
+                  onClick={() => saveBrainAndProceed('tour')}
+                  disabled={isSavingBrain}
+                  style={styles.saveBrainDirectBtn}
+                >
+                  <Icons.Check size={14} style={{ color: '#34d399' }} />
+                  <span>{isSavingBrain ? 'Saving Brain...' : 'Save Brain & Start Tour →'}</span>
+                </button>
+              )}
+            </div>
+
+            <div style={styles.footerRight}>
+              {isAtQuestionFive ? (
+                <div style={styles.q5ActionGroup}>
+                  <button
+                    type="button"
+                    onClick={() => saveBrainAndProceed('tour')}
+                    disabled={isSavingBrain || (currentQuestion.required && !answers[currentQuestion.id]?.trim())}
+                    style={styles.saveBrainPrimaryBtn}
+                  >
+                    <Icons.Check size={14} />
+                    <span>{isSavingBrain ? 'Saving Brain...' : 'Save Brain & Launch Tour →'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentQuestion.required && !answers[currentQuestion.id]?.trim()) {
+                        setShakeField(true);
+                        setTimeout(() => setShakeField(false), 500);
+                        return;
+                      }
+                      setCurrentQ(5);
+                    }}
+                    style={styles.optionalNextBtn}
+                  >
+                    Answer 5 Optional Details →
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNextQuestion}
+                  style={styles.nextBtn}
+                >
+                  <span>{currentQ === QUESTIONS.length - 1 ? 'Save & Start Tour' : 'Next Question →'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -518,485 +557,493 @@ export const OnboardingModal: React.FC = () => {
     );
   }
 
-  /* ────────────────────────────────────────────────────────────
-     PHASE 2: GAME-STYLE SPOTLIGHT TOUR
-     Renders via portal over the entire app. A cutout SVG mask
-     highlights the targeted element while everything else is
-     blurred and dimmed.
-     ──────────────────────────────────────────────────────────── */
-  const step = TOUR_STEPS[tourStep];
-  const hasRect = spotlightRect !== null;
-  const rx = spotlightRect;
+  const slide = TOUR_SLIDES[tourSlideIndex];
 
-  return createPortal(
-    <>
-      {/* Full-screen overlay with cutout */}
-      <div
-        style={s.tourOverlay}
-        onClick={handleNextTourStep}
-      >
-        {/* Dark layer – CSS clip-path creates the spotlight cutout */}
-        <svg
-          style={s.tourSvg}
-          viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <mask id="spotlight-mask">
-              <rect x="0" y="0" width="100%" height="100%" fill="white" />
-              {hasRect && rx && (
-                <rect
-                  x={rx.left - 8}
-                  y={rx.top - 8}
-                  width={rx.width + 16}
-                  height={rx.height + 16}
-                  rx="12"
-                  fill="black"
-                />
-              )}
-            </mask>
-          </defs>
-          <rect
-            x="0" y="0"
-            width="100%" height="100%"
-            fill="rgba(0,0,0,0.78)"
-            mask="url(#spotlight-mask)"
-          />
-        </svg>
-
-        {/* Pulsing border around the highlighted element */}
-        {hasRect && rx && (
+  return (
+    <div style={styles.backdrop}>
+      <div style={styles.tourDialog} onClick={e => e.stopPropagation()}>
+        <div style={styles.progressBar}>
           <div
             style={{
-              position: 'fixed',
-              top: rx.top - 8,
-              left: rx.left - 8,
-              width: rx.width + 16,
-              height: rx.height + 16,
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.35)',
-              pointerEvents: 'none',
-              animation: 'spotlightPulse 2s ease-in-out infinite',
-              zIndex: 10002
+              ...styles.progressFill,
+              width: `${((tourSlideIndex + 1) / TOUR_SLIDES.length) * 100}%`
             }}
           />
-        )}
-      </div>
+        </div>
 
-      {/* Tooltip */}
-      <div
-        key={tourStep}
-        style={{
-          ...s.tourTooltip,
-          ...tooltipStyle,
-          animation: 'tooltipEnter 0.3s ease-out'
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Step counter */}
-        <div style={s.tourTooltipHeader}>
-          <span style={s.tourStepBadge}>
-            {tourStep + 1} / {TOUR_STEPS.length}
-          </span>
-          <button type="button" onClick={handleSkipAll} style={s.tourSkipBtn}>
+        <div style={styles.tourHeader}>
+          <div style={styles.tourHeaderBadgeWrap}>
+            <span style={{ ...styles.tourBadge, color: slide.badgeColor, borderColor: `${slide.badgeColor}40`, background: `${slide.badgeColor}15` }}>
+              {slide.badge}
+            </span>
+            <span style={styles.tourSlideCount}>Slide {tourSlideIndex + 1} of {TOUR_SLIDES.length}</span>
+          </div>
+          <button
+            type="button"
+            onClick={finishTourAndEnter}
+            style={styles.tourCloseBtn}
+            title="Close tour and enter workspace"
+          >
             Skip Tour ✕
           </button>
         </div>
 
-        <h3 style={s.tourTitle}>{step.title}</h3>
-        <p style={s.tourBody}>{step.body}</p>
+        <div style={styles.tourBody}>
+          <div style={styles.tourInfoSide}>
+            <h2 style={styles.tourSlideTitle}>{slide.title}</h2>
+            <p style={styles.tourSlideDesc}>{slide.description}</p>
+            <div style={styles.bulletList}>
+              {slide.bullets.map((b, i) => (
+                <div key={i} style={styles.bulletItem}>
+                  <Icons.Check size={14} style={{ color: slide.badgeColor, flexShrink: 0, marginTop: '2px' }} />
+                  <span style={styles.bulletText}>{b}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div style={s.tourNavRow}>
-          {tourStep > 0 && (
+          <div style={styles.tourGraphicSide}>
+            {slide.graphic}
+          </div>
+        </div>
+
+        <div style={styles.tourFooter}>
+          <div style={styles.slideDots}>
+            {TOUR_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setTourSlideIndex(i)}
+                style={{
+                  ...styles.slideDot,
+                  width: i === tourSlideIndex ? '20px' : '6px',
+                  background: i === tourSlideIndex ? '#ffffff' : 'rgba(255,255,255,0.2)'
+                }}
+              />
+            ))}
+          </div>
+
+          <div style={styles.tourNavBtns}>
+            {tourSlideIndex > 0 && (
+              <button type="button" onClick={handlePrevSlide} style={styles.backBtn}>
+                ← Back
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); handlePrevTourStep(); }}
-              style={s.tourPrevBtn}
+              onClick={handleNextSlide}
+              style={styles.tourPrimaryBtn}
             >
-              ← Back
+              <span>{tourSlideIndex === TOUR_SLIDES.length - 1 ? '🚀 Launch FoundryOS Workspace' : 'Next Slide →'}</span>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleNextTourStep(); }}
-            style={s.tourNextBtn}
-          >
-            {tourStep === TOUR_STEPS.length - 1 ? '🚀 Enter Workspace' : 'Next →'}
-          </button>
-        </div>
-
-        {/* Progress dots */}
-        <div style={s.tourDotsRow}>
-          {TOUR_STEPS.map((_, idx) => (
-            <div
-              key={idx}
-              style={{
-                width: idx === tourStep ? '18px' : '6px',
-                height: '6px',
-                borderRadius: '3px',
-                backgroundColor: idx <= tourStep ? '#ffffff' : 'rgba(255,255,255,0.2)',
-                transition: 'all 0.25s ease'
-              }}
-            />
-          ))}
+          </div>
         </div>
       </div>
-    </>,
-    document.body
+    </div>
   );
 };
 
-/* ──────────────────────────────────────────────────────────────
-   STYLES
-   ────────────────────────────────────────────────────────────── */
-
-const s: Record<string, React.CSSProperties> = {
-  /* ── Questionnaire Phase ── */
+const styles: Record<string, React.CSSProperties> = {
   backdrop: {
     position: 'fixed',
     inset: 0,
-    backgroundColor: 'rgba(0,0,0,0.88)',
-    backdropFilter: 'blur(12px)',
+    background: 'rgba(0, 0, 0, 0.88)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10000,
-    padding: '24px'
+    padding: '20px',
+    zIndex: 99999,
+    animation: 'fadeSlideUp 0.25s ease-out'
   },
   dialog: {
-    backgroundColor: '#0c0d10',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '18px',
     width: '100%',
-    maxWidth: '580px',
+    maxWidth: '680px',
+    background: 'rgba(18, 18, 24, 0.96)',
+    border: '1px solid rgba(255, 255, 255, 0.14)',
+    borderRadius: '16px',
+    padding: '28px',
+    boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)',
     display: 'flex',
     flexDirection: 'column',
-    boxShadow: '0 32px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-    position: 'relative'
+    position: 'relative',
+    overflow: 'hidden'
   },
-  progressTrack: {
+  tourDialog: {
     width: '100%',
+    maxWidth: '740px',
+    background: 'rgba(18, 18, 24, 0.96)',
+    border: '1px solid rgba(255, 255, 255, 0.14)',
+    borderRadius: '16px',
+    padding: '28px',
+    boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: '3px',
-    backgroundColor: 'rgba(255,255,255,0.06)'
+    background: 'rgba(255, 255, 255, 0.06)'
   },
   progressFill: {
     height: '100%',
-    background: 'linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.6) 100%)',
-    transition: 'width 0.35s cubic-bezier(0.16,1,0.3,1)'
+    background: 'linear-gradient(90deg, #38bdf8 0%, #a78bfa 100%)',
+    transition: 'width 0.3s ease'
   },
-  topBar: {
+  topRow: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '18px 24px 0'
+    alignItems: 'center',
+    marginBottom: '16px'
   },
   topLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px'
+    gap: '12px'
   },
-  logoMark: {
-    width: '28px',
-    height: '28px',
+  logoBadge: {
+    width: '32px',
+    height: '32px',
     borderRadius: '8px',
-    backgroundColor: '#ffffff',
-    color: '#09090b',
+    background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+    color: '#000000',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: 800
+    fontWeight: 800,
+    fontFamily: 'var(--font-display)',
+    fontSize: '1rem'
   },
-  logoText: {
-    fontSize: '14px',
-    fontWeight: 600,
+  logoTitle: {
+    fontSize: '0.88rem',
+    fontWeight: 700,
     color: '#ffffff',
-    letterSpacing: '-0.01em'
+    display: 'block'
+  },
+  stepIndicator: {
+    fontSize: '0.72rem',
+    color: 'var(--text-tertiary)'
   },
   topRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px'
+    gap: '12px'
   },
-  tourLinkBtn: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '6px',
-    color: '#a1a1aa',
-    fontSize: '11px',
-    fontWeight: 500,
-    cursor: 'pointer',
+  countBadge: {
+    fontSize: '0.76rem',
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-secondary)',
     padding: '3px 8px',
-    transition: 'all 0.15s ease'
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid var(--glass-border-subtle)',
+    borderRadius: 'var(--radius-xs)'
   },
-  stepLabel: {
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    display: 'flex',
-    gap: '3px'
-  },
-  stepCurrent: { color: '#ffffff', fontWeight: 700 },
-  stepDiv: { color: 'rgba(255,255,255,0.3)' },
-  stepTotal: { color: 'rgba(255,255,255,0.45)' },
   skipBtn: {
-    background: 'none',
+    background: 'transparent',
     border: 'none',
-    color: '#71717a',
-    fontSize: '12px',
+    color: 'var(--text-tertiary)',
+    fontSize: '0.76rem',
     cursor: 'pointer',
-    padding: '4px 8px',
-    transition: 'color 0.15s'
+    padding: '4px 8px'
   },
-  mandatoryBar: {
+  phaseAlert: {
+    marginBottom: '18px'
+  },
+  alertMandatory: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 24px 0'
+    gap: '8px',
+    padding: '8px 12px',
+    background: 'rgba(56, 189, 248, 0.08)',
+    border: '1px solid rgba(56, 189, 248, 0.25)',
+    borderRadius: '8px',
+    fontSize: '0.78rem',
+    color: '#38bdf8',
+    fontWeight: 500
   },
-  mandatoryPill: {
-    position: 'relative',
-    height: '22px',
-    borderRadius: '11px',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    overflow: 'hidden',
+  alertOptional: {
     display: 'flex',
     alignItems: 'center',
-    paddingLeft: '10px',
-    paddingRight: '10px',
-    minWidth: '160px'
-  },
-  mandatoryFillInner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: '100%',
-    backgroundColor: 'rgba(16,185,129,0.18)',
-    borderRadius: '11px',
-    transition: 'width 0.3s ease'
-  },
-  mandatoryText: {
-    position: 'relative',
-    fontSize: '11px',
-    fontWeight: 600,
-    color: '#a1a1aa',
-    zIndex: 1
-  },
-  requiredTag: {
-    fontSize: '10px',
-    fontWeight: 700,
-    color: '#f87171',
-    backgroundColor: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.2)',
-    padding: '2px 8px',
-    borderRadius: '6px',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase' as const
-  },
-  optionalTag: {
-    fontSize: '10px',
-    fontWeight: 600,
-    color: '#71717a',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    padding: '2px 8px',
-    borderRadius: '6px',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase' as const
+    gap: '8px',
+    padding: '8px 12px',
+    background: 'rgba(167, 139, 250, 0.08)',
+    border: '1px solid rgba(167, 139, 250, 0.25)',
+    borderRadius: '8px',
+    fontSize: '0.78rem',
+    color: '#a78bfa',
+    fontWeight: 500
   },
   questionCard: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    minHeight: '260px'
+    padding: '20px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '12px',
+    marginBottom: '20px'
   },
-  questionIconRow: {
+  questionHeader: {
+    display: 'flex',
+    gap: '14px',
+    alignItems: 'flex-start',
+    marginBottom: '16px'
+  },
+  questionIconWrap: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
-  },
-  questionNumber: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.35)',
-    fontFamily: 'monospace'
+    justifyContent: 'center',
+    flexShrink: 0
   },
   questionLabel: {
-    fontSize: '22px',
+    fontSize: '1.15rem',
     fontWeight: 700,
     color: '#ffffff',
-    letterSpacing: '-0.02em',
-    lineHeight: 1.25,
-    margin: 0
+    margin: '0 0 4px 0',
+    fontFamily: 'var(--font-display)'
   },
   questionHint: {
-    fontSize: '13px',
-    color: '#71717a',
-    lineHeight: 1.5,
-    margin: 0
+    fontSize: '0.8rem',
+    color: 'var(--text-tertiary)',
+    margin: 0,
+    lineHeight: 1.45
+  },
+  inputWrap: {
+    width: '100%'
   },
   input: {
     width: '100%',
-    padding: '14px 16px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    padding: '12px 14px',
+    background: 'rgba(0, 0, 0, 0.4)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
     color: '#ffffff',
-    fontSize: '15px',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontSize: '0.92rem',
+    fontFamily: 'inherit',
     outline: 'none',
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-    marginTop: '4px'
+    boxSizing: 'border-box'
   },
   textarea: {
-    resize: 'vertical' as const,
-    minHeight: '80px',
-    lineHeight: 1.5
+    width: '100%',
+    padding: '12px 14px',
+    background: 'rgba(0, 0, 0, 0.4)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#ffffff',
+    fontSize: '0.92rem',
+    fontFamily: 'inherit',
+    outline: 'none',
+    resize: 'vertical',
+    boxSizing: 'border-box'
   },
   inputShake: {
-    borderColor: '#f87171',
-    animation: 'shake 0.4s ease'
+    animation: 'shake 0.4s ease-in-out',
+    borderColor: '#ef4444'
   },
-  footer: {
+  footerRow: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px 24px',
-    borderTop: '1px solid rgba(255,255,255,0.06)'
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap'
   },
-  dotsRow: {
+  footerLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: '4px'
+    gap: '10px'
   },
-  dot: {
+  footerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  backBtn: {
+    padding: '8px 14px',
+    background: 'transparent',
+    border: '1px solid var(--glass-border-subtle)',
+    borderRadius: '6px',
+    color: 'var(--text-secondary)',
+    fontSize: '0.8rem',
+    cursor: 'pointer'
+  },
+  nextBtn: {
+    padding: '9px 18px',
+    background: 'var(--accent-primary)',
+    border: '1px solid var(--accent-primary)',
+    borderRadius: '6px',
+    color: 'var(--bg-primary)',
+    fontSize: '0.84rem',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  q5ActionGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  saveBrainPrimaryBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '9px 18px',
+    background: '#10b981',
+    border: '1px solid #10b981',
+    borderRadius: '6px',
+    color: '#000000',
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  optionalNextBtn: {
+    padding: '9px 14px',
+    background: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '6px',
+    color: '#ffffff',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
+  saveBrainDirectBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    background: 'rgba(16, 185, 129, 0.1)',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '6px',
+    color: '#34d399',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
+  tourHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px'
+  },
+  tourHeaderBadgeWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  tourBadge: {
+    fontSize: '0.66rem',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: 700,
+    padding: '3px 8px',
+    borderRadius: '4px',
+    border: '1px solid'
+  },
+  tourSlideCount: {
+    fontSize: '0.76rem',
+    color: 'var(--text-tertiary)'
+  },
+  tourCloseBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    fontSize: '0.76rem',
+    cursor: 'pointer'
+  },
+  tourBody: {
+    display: 'grid',
+    gridTemplateColumns: '1.2fr 1fr',
+    gap: '24px',
+    alignItems: 'center',
+    minHeight: '260px',
+    marginBottom: '24px'
+  },
+  tourInfoSide: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  tourSlideTitle: {
+    fontSize: '1.35rem',
+    fontWeight: 800,
+    color: '#ffffff',
+    margin: 0,
+    fontFamily: 'var(--font-display)',
+    letterSpacing: '-0.02em'
+  },
+  tourSlideDesc: {
+    fontSize: '0.84rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.5,
+    margin: 0
+  },
+  bulletList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    marginTop: '6px'
+  },
+  bulletItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '8px'
+  },
+  bulletText: {
+    fontSize: '0.78rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.45
+  },
+  tourGraphicSide: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '16px',
+    background: 'rgba(255, 255, 255, 0.02)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '12px',
+    minHeight: '180px'
+  },
+  tourFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: '16px',
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+    flexWrap: 'wrap',
+    gap: '12px'
+  },
+  slideDots: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  slideDot: {
     height: '6px',
     borderRadius: '3px',
     border: 'none',
     cursor: 'pointer',
-    padding: 0,
     transition: 'all 0.25s ease'
   },
-  navBtns: {
+  tourNavBtns: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px'
   },
-  prevBtn: {
-    padding: '8px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    color: '#ffffff',
-    fontSize: '13px',
-    fontWeight: 500,
+  tourPrimaryBtn: {
+    padding: '9px 18px',
+    background: 'var(--accent-primary)',
+    border: '1px solid var(--accent-primary)',
+    borderRadius: '6px',
+    color: 'var(--bg-primary)',
+    fontSize: '0.84rem',
+    fontWeight: 700,
     cursor: 'pointer'
-  },
-  nextBtn: {
-    padding: '8px 22px',
-    borderRadius: '8px',
-    border: '1px solid #ffffff',
-    backgroundColor: '#ffffff',
-    color: '#09090b',
-    fontSize: '13px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 2px 10px rgba(255,255,255,0.12)'
-  },
-
-  /* ── Tour Phase ── */
-  tourOverlay: {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 10001,
-    cursor: 'pointer'
-  },
-  tourSvg: {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%'
-  },
-  tourTooltip: {
-    position: 'fixed',
-    zIndex: 10003,
-    backgroundColor: '#0f1015',
-    border: '1px solid rgba(255,255,255,0.16)',
-    borderRadius: '14px',
-    padding: '20px',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
-  tourTooltipHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  tourStepBadge: {
-    fontSize: '11px',
-    fontWeight: 700,
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.5)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    padding: '3px 8px',
-    borderRadius: '6px'
-  },
-  tourSkipBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#71717a',
-    fontSize: '11px',
-    cursor: 'pointer',
-    padding: '2px 6px'
-  },
-  tourTitle: {
-    fontSize: '17px',
-    fontWeight: 700,
-    color: '#ffffff',
-    margin: 0,
-    letterSpacing: '-0.01em'
-  },
-  tourBody: {
-    fontSize: '13px',
-    color: '#a1a1aa',
-    lineHeight: 1.55,
-    margin: 0
-  },
-  tourNavRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginTop: '4px'
-  },
-  tourPrevBtn: {
-    padding: '6px 12px',
-    borderRadius: '7px',
-    border: '1px solid rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    color: '#ffffff',
-    fontSize: '12px',
-    fontWeight: 500,
-    cursor: 'pointer'
-  },
-  tourNextBtn: {
-    padding: '6px 16px',
-    borderRadius: '7px',
-    border: '1px solid #ffffff',
-    backgroundColor: '#ffffff',
-    color: '#09090b',
-    fontSize: '12px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(255,255,255,0.1)'
-  },
-  tourDotsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    marginTop: '2px'
   }
 };

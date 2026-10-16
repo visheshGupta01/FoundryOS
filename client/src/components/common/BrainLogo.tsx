@@ -36,8 +36,8 @@ export const BrainLogo: React.FC<BrainLogoProps> = ({ size = 26, className, styl
           height: '100%',
           objectFit: 'contain',
           filter: isLight
-            ? 'brightness(0.12) drop-shadow(0 0 3px rgba(99, 102, 241, 0.35))'
-            : 'drop-shadow(0 0 8px rgba(129, 140, 248, 0.65)) brightness(1.2)',
+            ? 'brightness(0.18) grayscale(1)'
+            : 'grayscale(1) brightness(1.15)',
           transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           userSelect: 'none',
           pointerEvents: 'none'

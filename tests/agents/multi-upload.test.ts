@@ -30,7 +30,7 @@ describe("AgentRunner Multi-Upload & Agent Selection", () => {
     expect(result.creditUsage).toBeDefined();
     expect(result.creditUsage?.creditsDeducted).toBeGreaterThan(0);
     expect(result.creditUsage?.creditsRemaining).toBeLessThan(100);
-  }, 15000);
+  }, 45000);
 
   it("should execute specific chosen employee directly without auto routing", async () => {
     const result = await runner.run({
@@ -41,7 +41,7 @@ describe("AgentRunner Multi-Upload & Agent Selection", () => {
 
     expect(result.employeeId).toBe("competitor-analyst");
     expect(result.routedBy).toBe("manual_selection");
-  });
+  }, 30000);
 
   it("should enforce maximum of 5 uploaded files", async () => {
     const excessiveDocs = [

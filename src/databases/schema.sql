@@ -252,6 +252,15 @@ CREATE TABLE IF NOT EXISTS brain_memories (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_companies_tenant ON companies(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_products_tenant ON company_products(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_icp_tenant ON business_icp(tenant_id);
@@ -270,3 +279,4 @@ CREATE INDEX IF NOT EXISTS idx_chunks_embedding_hnsw ON document_chunks USING hn
 CREATE INDEX IF NOT EXISTS idx_campaigns_tenant ON campaign_executions(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_memories_tenant ON brain_memories(tenant_id, memory_type, status, is_current);
 CREATE INDEX IF NOT EXISTS idx_memories_tsv ON brain_memories USING gin(tsv);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(LOWER(email));

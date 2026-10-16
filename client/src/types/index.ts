@@ -1,4 +1,6 @@
-export type ViewType = 'chat' | 'approvals' | 'employees' | 'brain' | 'recent-chats' | 'token-analytics' | 'plugins' | 'archive' | 'integrations';
+export type ViewType = 'chat' | 'approvals' | 'employees' | 'brain' | 'recent-chats' | 'token-analytics' | 'plugins' | 'archive' | 'integrations' | 'settings';
+
+export type SettingsSectionType = 'general' | 'apikeys' | 'models' | 'appearance' | 'account' | 'customizations' | 'brain' | 'tokens' | 'billing';
 
 export interface StartupProfile {
   id: string;
@@ -125,7 +127,10 @@ export interface AttachedDocument {
 export interface ToolCallExecution {
   toolName: string;
   input: unknown;
-  result: unknown;
+  result?: unknown;
+  output?: unknown;
+  durationMs?: number;
+  success?: boolean;
 }
 
 export interface Artifact {
@@ -206,9 +211,16 @@ export interface Message {
   artifacts?: Artifact[];
   pendingApproval?: HitlApproval;
   isLightweight?: boolean;
-  runtimeMode?: 'lightweight_fast' | 'specialist_pipeline';
+  runtimeMode?: 'lightweight_fast' | 'specialist_pipeline' | 'trueforge_production';
   routedBy?: string;
   routingReason?: string;
+  isStreaming?: boolean;
+  isTyping?: boolean;
+  suggestions?: Array<{
+    label: string;
+    prompt: string;
+    agentId?: string;
+  }>;
 }
 
 export interface McpServerInfo {
@@ -244,6 +256,11 @@ export interface BrainHealth {
   completenessPercent: number;
   configuredFields: string[];
   missingFields: string[];
+  docCount?: number;
+  memoryCount?: number;
+  anchorsCount?: number;
+  totalSignals?: number;
+  levelLabel?: string;
 }
 
 export interface TokenAnalyticsReport {

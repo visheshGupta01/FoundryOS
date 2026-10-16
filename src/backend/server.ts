@@ -24,12 +24,17 @@ const STATIC_DIR = existsSync(join(process.cwd(), "public"))
 
 async function handleStaticFile(reqPath: string, res: ServerResponse): Promise<void> {
   const safePath = reqPath === "/" ? "/index.html" : reqPath;
-  const filePath = join(STATIC_DIR, safePath);
+  let filePath = join(STATIC_DIR, safePath);
 
   if (!filePath.startsWith(STATIC_DIR) || !existsSync(filePath)) {
-    res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("404 Not Found");
-    return;
+    const indexPath = join(STATIC_DIR, "index.html");
+    if (!extname(reqPath) && existsSync(indexPath)) {
+      filePath = indexPath;
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("404 Not Found");
+      return;
+    }
   }
 
   try {

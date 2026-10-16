@@ -5,6 +5,7 @@ import { createSeoAuditMcpServer } from "./servers/seo-audit.server.js";
 import { createGrowthGtmMcpServer } from "./servers/growth-gtm.server.js";
 import { createBrainMemoryMcpServer } from "./servers/brain-memory.server.js";
 import { createDocumentArchiveMCPServer } from "./servers/document-archive.server.js";
+import { createIntegrationHubMCPServer } from "./servers/integration-hub.server.js";
 import { logger } from "../shared/logger.js";
 
 export class McpManager {
@@ -59,8 +60,17 @@ export class McpManager {
     await docArchive.connectInMemory(createDocumentArchiveMCPServer());
     this.clients.set("document-archive-mcp", docArchive);
 
+    const integrationHub = new McpClientWrapper({
+      id: "integration-hub-mcp",
+      name: "Workspace Integration Hub MCP Server",
+      description: "Slack/Discord notifications, GitHub changelog sync, and universal integration health audits",
+      transport: "in-memory"
+    });
+    await integrationHub.connectInMemory(createIntegrationHubMCPServer());
+    this.clients.set("integration-hub-mcp", integrationHub);
+
     this.initialized = true;
-    logger.info("FoundryOS Multi-MCP Server Suite initialized (5 core servers active)");
+    logger.info(`FoundryOS Multi-MCP Server Suite initialized (${this.clients.size} verified servers active)`);
   }
 
   public async addStdioServer(config: McpServerConfig): Promise<McpServerInfo> {

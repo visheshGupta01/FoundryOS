@@ -48,6 +48,29 @@ export function createMarketIntelMcpServer(): Server {
           }
         },
         {
+          name: "neural_web_research",
+          description: "Free Exa-alternative neural web research synthesizing web search, Wikipedia, and community discussions",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Deep search and research query" },
+              depth: { type: "string", enum: ["quick", "deep"], default: "quick" }
+            },
+            required: ["query"]
+          }
+        },
+        {
+          name: "wikipedia_intelligence",
+          description: "Retrieve high-accuracy industry definitions, market category summaries, and company history",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search query for Wikipedia encyclopedic summary" }
+            },
+            required: ["query"]
+          }
+        },
+        {
           name: "fetch_page_content",
           description: "Fetch and clean text content from any public webpage or competitor URL",
           inputSchema: {

@@ -253,4 +253,38 @@ describe("AgentRunner (Research & Strategy AI Execution)", () => {
 
     expect(result.llmProvider).toBe("ollama");
   });
+
+  it("should execute through TrueForge when TrueForge harness is available", async () => {
+    const { mockLLM, mockTrueForge, mockBrain, mockRepo } = createMockDependencies();
+    vi.spyOn(mockTrueForge, "isAvailable").mockResolvedValue(true);
+    vi.spyOn(mockTrueForge, "runAgentTurn").mockResolvedValue({
+      turnId: "tf-turn-999",
+      sessionId: "tf-session-123",
+      status: "done",
+      output: JSON.stringify({
+        summary: "TrueForge Market Strategy",
+        trends: ["AI Search Adoption", "Zero-Click Search"],
+        keyFocus: "Market Expansion"
+      })
+    });
+
+    const runner = new AgentRunner(mockLLM, mockTrueForge, mockBrain, mockRepo);
+    const result = await runner.run({
+      tenantId,
+      employeeId: "market-research-analyst",
+      task: "Analyze upcoming category tailwinds."
+    });
+
+    expect(result.llmProvider).toBe("trueforge");
+    expect(result.runtimeMode).toBe("trueforge_production");
+    const output = result.output as any;
+    expect(output.summary).toBe("TrueForge Market Strategy");
+    expect(mockTrueForge.runAgentTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentName: "market-research-analyst",
+        tenantId
+      })
+    );
+  });
 });
+

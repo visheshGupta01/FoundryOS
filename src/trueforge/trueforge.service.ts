@@ -134,6 +134,40 @@ export class TrueForgeService {
       );
     }
   }
+
+  public async isAvailable(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(`${env.TRUEFORGE_API_URL}/healthz`, {
+        signal: controller.signal
+      }).catch(() => null);
+      clearTimeout(timeoutId);
+      return Boolean(res && (res.ok || res.status === 401 || res.status === 403));
+    } catch {
+      return false;
+    }
+  }
+
+  public async runAgentTurn(input: {
+    agentName: string;
+    prompt: string;
+    tenantId: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<AgentTurnExecutionResult> {
+    const session = await this.createSession({
+      agentName: input.agentName,
+      tenantId: input.tenantId,
+      metadata: input.metadata
+    });
+
+    return await this.executeTurn({
+      sessionId: session.sessionId,
+      tenantId: input.tenantId,
+      prompt: input.prompt
+    });
+  }
 }
 
 export const trueForgeService = new TrueForgeService();
+

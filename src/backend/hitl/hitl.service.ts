@@ -8,7 +8,8 @@ export type HitlActionType =
   | "broadcast_slack"
   | "sync_google_drive"
   | "validate_proposed_learning"
-  | "publish_campaign_offer";
+  | "publish_campaign_offer"
+  | "missing_information_clarification";
 
 export interface HitlOption {
   id: string;
@@ -51,87 +52,35 @@ export class HitlService {
   }
 
   constructor() {
-    this.seedDefaultApproval();
-  }
-
-  private seedDefaultApproval(): void {
-    const seed: HitlApprovalRequest = {
-      id: "hitl-sample-positioning",
-      tenantId: "default-tenant",
-      employeeId: "chief-marketing-strategist",
-      employeeName: "Chief Marketing Strategist",
-      actionType: "commit_brand_positioning",
-      title: "Select Core Go-To-Market Positioning Thesis",
-      description: "Choose the primary strategic hook for FoundryOS or specify your own direction:",
-      options: [
-        {
-          id: "opt-autonomous-os",
-          label: "The Autonomous AI Marketing OS",
-          description: "Position as a full-stack operating system that orchestrates specialized marketing agents and retains company brain memory.",
-          recommended: true
-        },
-        {
-          id: "opt-fractional-cmo",
-          label: "On-Demand Fractional Marketing Team",
-          description: "Frame as hiring 5 elite AI specialists for the price of software, targeting early-stage seed founders.",
-          badge: "High ROI"
-        },
-        {
-          id: "opt-category-creator",
-          label: "Autonomous Agency Killer",
-          description: "Provocative contrarian positioning challenging slow $10k/mo human marketing agency retainers.",
-          badge: "Disruptive"
-        }
-      ],
-      payload: {
-        positioningStatement: "FoundryOS: The AI Marketing Operating System that coordinates specialized AI Employees, retains Company Brain memory, and launches your marketing.",
-        tone: "Confident, Human & Clear"
-      },
-      status: "pending",
-      createdAt: new Date().toISOString()
-    };
-    this.approvals.set(seed.id, seed);
-
-    const seedCampaign: HitlApprovalRequest = {
-      id: "hitl-sample-campaign",
-      tenantId: "default-tenant",
-      employeeId: "gtm-funnel-strategist",
-      employeeName: "GTM Funnel Strategist",
-      actionType: "publish_campaign_offer",
-      title: "Approve Q4 Inbound Acquisition Experiment",
-      description: "Select which campaign architecture to launch first across the growth funnel:",
-      options: [
-        {
-          id: "opt-free-audit",
-          label: "Viral Competitive Teardown Engine",
-          description: "Automated teardown tool that benchmarks prospect positioning against their top 3 competitors.",
-          recommended: true
-        },
-        {
-          id: "opt-founder-playbook",
-          label: "Zero-to-One Founder Growth Playbook",
-          description: "Interactive Notion & PDF guide breaking down $0 to $1M ARR marketing playbooks.",
-          badge: "Authority"
-        },
-        {
-          id: "opt-beta-cohort",
-          label: "Private Founder VIP Beta Cohort",
-          description: "High-scarcity, application-only rollout for YC and Techstars portfolio founders.",
-          badge: "High Intent"
-        }
-      ],
-      payload: {
-        channel: "#marketing",
-        text: "Automated Competitive Teardown offer has passed model verification. BOFU offer: 14-day trial with guaranteed pipeline acceleration."
-      },
-      status: "pending",
-      createdAt: new Date(Date.now() - 3600000).toISOString()
-    };
-    this.approvals.set(seedCampaign.id, seedCampaign);
+    // Clean initialization: no mock seed approvals
   }
 
   public generateDefaultOptions(title: string, actionType: HitlActionType): HitlOption[] {
     const lower = `${title} ${actionType}`.toLowerCase();
+
+    if (actionType === "missing_information_clarification" || lower.includes("missing") || lower.includes("clarification") || lower.includes("unknown")) {
+      return [
+        {
+          id: "opt-continue-benchmarks",
+          label: "⚡ Continue without it (Use standard benchmarks)",
+          description: "Proceed immediately using standard startup industry benchmarks, best-practice pricing, and general market assumptions.",
+          recommended: true
+        },
+        {
+          id: "opt-provide-details",
+          label: "✍️ Provide missing business details",
+          description: "Specify your exact pricing, target customer, or competitors for high-precision bespoke analysis.",
+          badge: "High Precision"
+        },
+        {
+          id: "opt-auto-research",
+          label: "🌐 Autonomous web discovery",
+          description: "Let the AI automatically research online using search engines and trends data to infer the missing context.",
+          badge: "Automated"
+        }
+      ];
+    }
+
     if (lower.includes("position") || lower.includes("brand") || lower.includes("narrative")) {
       return [
         {

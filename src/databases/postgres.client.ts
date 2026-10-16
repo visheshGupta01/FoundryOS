@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import pg from "pg";
 import pgvector from "pgvector/pg";
 import { env } from "../backend/config/env.js";
@@ -9,6 +12,7 @@ const { Pool } = pg;
 
 export class DatabasePool {
   private readonly pool: pg.Pool;
+  private isSchemaInitialized = false;
 
   constructor(connectionString: string = env.DATABASE_URL) {
     this.pool = new Pool({
@@ -18,17 +22,34 @@ export class DatabasePool {
       connectionTimeoutMillis: 5000
     });
 
-    this.pool.on("connect", async (client: pg.PoolClient) => {
-      try {
-        await pgvector.registerType(client);
-      } catch (error: unknown) {
-        logger.error("Failed to register pgvector type on client connection", error);
-      }
-    });
-
     this.pool.on("error", (error: Error) => {
       logger.error("Unexpected database pool error", error);
     });
+  }
+
+  public async ensureSchema(): Promise<boolean> {
+    if (this.isSchemaInitialized) return true;
+    try {
+      const isAlive = await this.healthCheck();
+      if (!isAlive) return false;
+
+      const check = await this.pool.query(
+        "SELECT 1 FROM information_schema.tables WHERE table_name = 'companies' LIMIT 1;"
+      );
+      if (check.rows.length === 0) {
+        const schemaPath = join(process.cwd(), "src", "databases", "schema.sql");
+        if (existsSync(schemaPath)) {
+          const sql = await readFile(schemaPath, "utf-8");
+          await this.pool.query(sql);
+          logger.info("PostgreSQL schema successfully auto-initialized with pgvector extension");
+        }
+      }
+      this.isSchemaInitialized = true;
+      return true;
+    } catch (err: unknown) {
+      logger.warn("Schema auto-initialization skipped or failed", { error: String(err) });
+      return false;
+    }
   }
 
   public async query<R extends pg.QueryResultRow = pg.QueryResultRow>(
@@ -52,7 +73,15 @@ export class DatabasePool {
   public async getClient(): Promise<pg.PoolClient> {
     try {
       const client = await this.pool.connect();
-      await pgvector.registerType(client);
+      try {
+        if (typeof (pgvector as any).registerTypes === "function") {
+          await (pgvector as any).registerTypes(client);
+        } else if (typeof (pgvector as any).registerType === "function") {
+          await (pgvector as any).registerType(client);
+        }
+      } catch {
+        // Types already registered on connection
+      }
       return client;
     } catch (error: unknown) {
       throw new InfrastructureError(

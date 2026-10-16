@@ -12,14 +12,11 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   TRUEFORGE_API_URL: z.string().url().default("http://localhost:8080"),
   TRUEFORGE_API_KEY: z.string().min(1).default("tf_dev_default_key"),
-  EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
+  EMBEDDING_MODEL: z.string().min(1).default("nomic-embed-text"),
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
   OLLAMA_BASE_URL: z.string().url().default("http://localhost:11434"),
-  OLLAMA_MODEL: z.string().default("gemma:2b"),
-  OPENAI_API_KEY: z.string().default(""),
-  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
-  OPENAI_STRATEGY_MODEL: z.string().default("gpt-4o"),
-  LLM_PROVIDER: z.enum(["openai", "ollama"]).default("ollama")
+  OLLAMA_MODEL: z.string().default("llama3.2:1b"),
+  LLM_PROVIDER: z.literal("ollama").default("ollama")
 });
 
 export type Env = z.infer<typeof EnvSchema>;

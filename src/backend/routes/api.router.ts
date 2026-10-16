@@ -16,6 +16,8 @@ import { documentStore } from "../documents/document.store.js";
 import { hitlService } from "../hitl/hitl.service.js";
 import { integrationStore } from "../integrations/integration.store.js";
 import { DEMO_PROFILES, getDemoProfile } from "../config/demo-profiles.js";
+import { handleAuthRoute } from "../auth/auth.router.js";
+import { apiKeyStore } from "../auth/apikey.store.js";
 
 async function readJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -57,6 +59,19 @@ export async function handleApiRoute(
     return true;
   }
 
+  if (url.pathname.startsWith("/api/auth")) {
+    const authHandled = await handleAuthRoute(
+      req,
+      res,
+      url,
+      () => readJsonBody(req),
+      sendJson
+    );
+    if (authHandled) {
+      return true;
+    }
+  }
+
   if (url.pathname === "/api/health" && req.method === "GET") {
     const isDbAlive = await db.healthCheck();
     sendJson(res, 200, {
@@ -72,6 +87,42 @@ export async function handleApiRoute(
   if (url.pathname === "/api/employees" && req.method === "GET") {
     const employees = employeeRegistry.listEmployees();
     sendJson(res, 200, { employees });
+    return true;
+  }
+
+  if (url.pathname === "/api/v1/apikeys" && req.method === "GET") {
+    const tenantId = url.searchParams.get("tenantId") || "default-tenant";
+    const keys = apiKeyStore.listKeys(tenantId);
+    sendJson(res, 200, { keys });
+    return true;
+  }
+
+  if (url.pathname === "/api/v1/apikeys" && req.method === "POST") {
+    try {
+      const body = await readJsonBody<{
+        name: string;
+        tenantId?: string;
+        permissions?: "full_access" | "read_only" | "restricted";
+        expiryDays?: number | null;
+      }>(req);
+      const result = apiKeyStore.createKey({
+        name: body.name || "API Key",
+        tenantId: body.tenantId || "default-tenant",
+        permissions: body.permissions,
+        expiryDays: body.expiryDays
+      });
+      sendJson(res, 201, result);
+      return true;
+    } catch (err: unknown) {
+      sendJson(res, 400, { error: (err as Error).message });
+      return true;
+    }
+  }
+
+  if (url.pathname.startsWith("/api/v1/apikeys/") && req.method === "DELETE") {
+    const keyId = url.pathname.replace("/api/v1/apikeys/", "");
+    const deleted = apiKeyStore.revokeKey(keyId);
+    sendJson(res, 200, { success: deleted, id: keyId });
     return true;
   }
 
@@ -120,34 +171,40 @@ export async function handleApiRoute(
 
       // 2. Persist to Postgres if alive
       try {
-        await brainRepository.upsertCompanyProfile({
-          tenantId,
-          companyName: body.name,
-          website: body.website || undefined,
-          description: body.oneLiner,
-          industry: "B2B Marketing Technology"
-        });
-
-        await brainRepository.upsertIcp({
-          tenantId,
-          customerType: body.audience,
-          painPoints: [body.problem]
-        });
-
-        await brainRepository.upsertBrandProfile({
-          tenantId,
-          brandName: body.name,
-          brandPositioning: body.oneLiner,
-          tonePositive: body.tone ? body.tone.split(",").map((s) => s.trim()) : ["confident", "human"],
-          toneAvoid: body.avoidTone ? body.avoidTone.split(",").map((s) => s.trim()) : []
-        });
-
-        if (body.competitors) {
-          await brainRepository.upsertCompetitor({
+        const isDbAlive = await db.healthCheck();
+        if (isDbAlive) {
+          await db.ensureSchema();
+          await brainRepository.upsertCompanyProfile({
             tenantId,
-            name: body.competitors.split(",")[0]?.trim() || "Top Competitor",
-            positioning: body.competitors
+            companyName: body.name,
+            website: body.website || undefined,
+            description: body.oneLiner,
+            industry: "B2B Marketing Technology"
           });
+
+          await brainRepository.upsertIcp({
+            tenantId,
+            customerType: body.audience,
+            painPoints: [body.problem]
+          });
+
+          await brainRepository.upsertBrandProfile({
+            tenantId,
+            brandName: body.name,
+            brandPositioning: body.oneLiner,
+            tonePositive: body.tone ? body.tone.split(",").map((s) => s.trim()) : ["confident", "human"],
+            toneAvoid: body.avoidTone ? body.avoidTone.split(",").map((s) => s.trim()) : []
+          });
+
+          if (body.competitors) {
+            await brainRepository.upsertCompetitor({
+              tenantId,
+              name: body.competitors.split(",")[0]?.trim() || "Top Competitor",
+              positioning: body.competitors
+            });
+          }
+        } else {
+          logger.info("Database offline; state held in active memory and semantic vector cache");
         }
       } catch (dbErr) {
         logger.warn("Database storage deferred; updated active memory store", { error: String(dbErr) });
@@ -382,25 +439,29 @@ export async function handleApiRoute(
       });
 
       try {
-        await brainRepository.upsertCompanyProfile({
-          tenantId,
-          companyName: profile.name,
-          website: profile.website,
-          description: profile.oneLiner,
-          industry: profile.industry
-        });
-        await brainRepository.upsertIcp({
-          tenantId,
-          customerType: profile.audience,
-          painPoints: [profile.problem]
-        });
-        await brainRepository.upsertBrandProfile({
-          tenantId,
-          brandName: profile.name,
-          brandPositioning: profile.oneLiner,
-          tonePositive: profile.tone.split(",").map((s) => s.trim()),
-          toneAvoid: profile.avoidTone.split(",").map((s) => s.trim())
-        });
+        const isDbAlive = await db.healthCheck();
+        if (isDbAlive) {
+          await db.ensureSchema();
+          await brainRepository.upsertCompanyProfile({
+            tenantId,
+            companyName: profile.name,
+            website: profile.website,
+            description: profile.oneLiner,
+            industry: profile.industry
+          });
+          await brainRepository.upsertIcp({
+            tenantId,
+            customerType: profile.audience,
+            painPoints: [profile.problem]
+          });
+          await brainRepository.upsertBrandProfile({
+            tenantId,
+            brandName: profile.name,
+            brandPositioning: profile.oneLiner,
+            tonePositive: profile.tone.split(",").map((s) => s.trim()),
+            toneAvoid: profile.avoidTone.split(",").map((s) => s.trim())
+          });
+        }
       } catch {
         // Fallback gracefully if database client is offline
       }
@@ -603,90 +664,86 @@ export async function handleApiRoute(
 
   if (url.pathname === "/api/integrations" && req.method === "GET") {
     const tenantId = url.searchParams.get("tenantId") ?? "default-tenant";
-    const status = integrationStore.getStatus(tenantId);
+    const status = integrationStore.getAllStatus(tenantId);
     sendJson(res, 200, status);
     return true;
   }
 
-  if (url.pathname === "/api/integrations/slack" && req.method === "POST") {
+  if (url.pathname.startsWith("/api/integrations/test/") && req.method === "POST") {
+    const id = url.pathname.replace("/api/integrations/test/", "").trim();
+    try {
+      const body = await readJsonBody<{ apiKey?: string; botToken?: string; token?: string; secondaryValue?: string; defaultChannel?: string; folderName?: string }>(req);
+      const testKey = body.apiKey || body.botToken || body.token || "";
+      const testSecondary = body.secondaryValue || body.defaultChannel || body.folderName;
+      const test = await integrationStore.testIntegration(id, testKey, testSecondary);
+      sendJson(res, 200, test);
+    } catch (err: unknown) {
+      sendJson(res, 400, { ok: false, message: String(err) });
+    }
+    return true;
+  }
+
+  if (url.pathname.startsWith("/api/integrations/") && req.method === "POST") {
+    const id = url.pathname.replace("/api/integrations/", "").trim();
     try {
       const body = await readJsonBody<{
         tenantId?: string;
-        botToken: string;
+        apiKey?: string;
+        botToken?: string;
+        token?: string;
+        accessToken?: string;
+        secondaryValue?: string;
         defaultChannel?: string;
+        folderName?: string;
         signingSecret?: string;
       }>(req);
 
       const tenantId = body.tenantId ?? "default-tenant";
-      const result = await integrationStore.configureSlack(tenantId, {
-        botToken: body.botToken,
-        defaultChannel: body.defaultChannel || "#marketing",
-        ...(body.signingSecret ? { signingSecret: body.signingSecret } : {})
-      });
+      const key = body.apiKey || body.botToken || body.token || body.accessToken || "";
+      const secondary = body.secondaryValue || body.defaultChannel || body.folderName;
 
-      sendJson(res, 200, result);
+      if (id === "slack") {
+        const result = await integrationStore.configureSlack(tenantId, {
+          botToken: key,
+          defaultChannel: secondary || "#marketing",
+          ...(body.signingSecret ? { signingSecret: body.signingSecret } : {})
+        });
+        sendJson(res, 200, result);
+        return true;
+      }
+
+      if (id === "drive" || id === "google-drive") {
+        const result = await integrationStore.configureDrive(tenantId, {
+          accessToken: key,
+          folderName: secondary
+        });
+        sendJson(res, 200, result);
+        return true;
+      }
+
+      integrationStore.setGenericConfig(tenantId, id, key, secondary);
+      sendJson(res, 200, { success: true, id, connected: true });
     } catch (err: unknown) {
       sendJson(res, 400, { error: String(err) });
     }
     return true;
   }
 
-  if (url.pathname === "/api/integrations/slack" && req.method === "DELETE") {
+  if (url.pathname.startsWith("/api/integrations/") && req.method === "DELETE") {
+    const id = url.pathname.replace("/api/integrations/", "").trim();
     const tenantId = url.searchParams.get("tenantId") ?? "default-tenant";
-    const disconnected = integrationStore.disconnectSlack(tenantId);
+    if (id === "slack") {
+      const disconnected = integrationStore.disconnectSlack(tenantId);
+      sendJson(res, 200, { success: disconnected });
+      return true;
+    }
+    if (id === "drive" || id === "google-drive") {
+      const disconnected = integrationStore.disconnectDrive(tenantId);
+      sendJson(res, 200, { success: disconnected });
+      return true;
+    }
+    const disconnected = integrationStore.removeGenericConfig(tenantId, id);
     sendJson(res, 200, { success: disconnected });
-    return true;
-  }
-
-  if (url.pathname === "/api/integrations/drive" && req.method === "POST") {
-    try {
-      const body = await readJsonBody<{
-        tenantId?: string;
-        accessToken?: string;
-        apiKey?: string;
-        folderName?: string;
-      }>(req);
-
-      const tenantId = body.tenantId ?? "default-tenant";
-      const result = await integrationStore.configureDrive(tenantId, {
-        ...(body.accessToken ? { accessToken: body.accessToken } : {}),
-        ...(body.apiKey ? { apiKey: body.apiKey } : {}),
-        ...(body.folderName ? { folderName: body.folderName } : {})
-      });
-
-      sendJson(res, 200, result);
-    } catch (err: unknown) {
-      sendJson(res, 400, { error: String(err) });
-    }
-    return true;
-  }
-
-  if (url.pathname === "/api/integrations/drive" && req.method === "DELETE") {
-    const tenantId = url.searchParams.get("tenantId") ?? "default-tenant";
-    const disconnected = integrationStore.disconnectDrive(tenantId);
-    sendJson(res, 200, { success: disconnected });
-    return true;
-  }
-
-  if (url.pathname === "/api/integrations/test/slack" && req.method === "POST") {
-    try {
-      const body = await readJsonBody<{ botToken: string }>(req);
-      const test = await integrationStore.testSlack(body.botToken || "");
-      sendJson(res, 200, test);
-    } catch (err: unknown) {
-      sendJson(res, 400, { error: String(err) });
-    }
-    return true;
-  }
-
-  if (url.pathname === "/api/integrations/test/drive" && req.method === "POST") {
-    try {
-      const body = await readJsonBody<{ accessToken?: string; apiKey?: string }>(req);
-      const test = await integrationStore.testDrive(body.accessToken, body.apiKey);
-      sendJson(res, 200, test);
-    } catch (err: unknown) {
-      sendJson(res, 400, { error: String(err) });
-    }
     return true;
   }
 

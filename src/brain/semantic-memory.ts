@@ -30,52 +30,7 @@ export class SemanticMemoryStore {
   }
 
   constructor() {
-    this.seedInitialKnowledge();
-  }
-
-  private seedInitialKnowledge(): void {
-    const initialItems = [
-      {
-        sourceType: "company_brain" as const,
-        sourceId: "brain-core-positioning",
-        title: "FoundryOS Core Positioning & Architecture",
-        content: "FoundryOS is the AI Marketing Operating System for founders and startups. It coordinates specialized AI employee personas (Chief Marketing Strategist, Market Research Analyst, Competitor Analyst, and GTM Funnel Architect) with persistent institutional Company Brain memory, native MCP tools, and full deliverable generation."
-      },
-      {
-        sourceType: "company_brain" as const,
-        sourceId: "brain-target-icp",
-        title: "Ideal Customer Profile & Pain Points",
-        content: "Target audience comprises early-stage B2B SaaS and technical founders with 1-25 employees. Core pain point: founders waste weeks coordinating fragmented AI tools with zero persistent company context, inconsistent brand tone, and high prompt fatigue."
-      },
-      {
-        sourceType: "competitor_intel" as const,
-        sourceId: "brain-competitor-audit",
-        title: "Competitive Landscape & Moats",
-        content: "Competitors are fragmented into generic prompt wrappers (Jasper, Copy.ai) and rigid workflow builders (Make, Zapier). Vulnerabilities of competitors: no persistent company context, no verified memory learning, prompt drift, and zero multi-agent synchronization."
-      },
-      {
-        sourceType: "memory_learning" as const,
-        sourceId: "learning-pricing-strategy",
-        title: "Pricing & GTM Model Benchmark",
-        content: "Recommended B2B SaaS pricing tier: Self-serve Starter ($49/mo) with 50K tokens, Growth ($149/mo) with full MCP tools & PDF export, and Scale ($399/mo) with dedicated multi-agent autonomy and custom integrations."
-      }
-    ];
-
-    for (const item of initialItems) {
-      const embedding = (embeddingService as any).generateSemanticFeatureVector(item.content);
-      const id = `sem-mem-${item.sourceId}`;
-      this.items.set(id, {
-        id,
-        tenantId: "default-tenant",
-        sourceType: item.sourceType,
-        sourceId: item.sourceId,
-        title: item.title,
-        content: item.content,
-        embedding,
-        metadata: { isSeed: true },
-        createdAt: new Date().toISOString()
-      });
-    }
+    // Clean startup: index from user-provided company brain and documents
   }
 
   public async indexText(params: {

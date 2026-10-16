@@ -6,11 +6,55 @@ import { formatAgentOutputToMarkdown } from '../../utils/formatOutput';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
 export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
-  const { setActiveArtifact, setIsArtifactModalOpen, resolveHitlApproval, generatePdfDeliverable } = useApp();
+  const { setActiveArtifact, setIsArtifactModalOpen, resolveHitlApproval, generatePdfDeliverable, executeAgentRun } = useApp();
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [expandedTools, setExpandedTools] = useState<Record<number, boolean>>({});
   const [isResolvingHitl, setIsResolvingHitl] = useState(false);
+
+  const markdownString = typeof message.content === 'string'
+    ? message.content
+    : formatAgentOutputToMarkdown(message.content);
+
+  const isAssistant = !message.isUser;
+
+  const tokens = React.useMemo(() => {
+    if (!markdownString) return [];
+    return markdownString.match(/(\S+|\s+)/g) || [markdownString];
+  }, [markdownString]);
+
+  const [isTyping, setIsTyping] = useState(() => Boolean(isAssistant && message.isStreaming));
+  const [tokenIndex, setTokenIndex] = useState(() => (isAssistant && message.isStreaming ? 0 : tokens.length));
+
+  React.useEffect(() => {
+    if (!isTyping) return;
+    if (tokenIndex >= tokens.length) {
+      setIsTyping(false);
+      return;
+    }
+
+    const remaining = tokens.length - tokenIndex;
+    const step = tokens.length > 250
+      ? Math.max(2, Math.ceil(remaining / 28))
+      : 1;
+
+    const currentToken = tokens[tokenIndex] || '';
+    const hasPunctuation = /[.,!?;:\n]/.test(currentToken);
+    const delay = hasPunctuation ? 24 : 12;
+
+    const timer = setTimeout(() => {
+      setTokenIndex(prev => Math.min(prev + step, tokens.length));
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [tokenIndex, isTyping, tokens]);
+
+  const handleSkipTyping = () => {
+    setTokenIndex(tokens.length);
+    setIsTyping(false);
+  };
+
+  const displayedContent = isTyping ? tokens.slice(0, tokenIndex).join('') : markdownString;
   const [selectedOptionId, setSelectedOptionId] = useState<string>(() => {
     const opts = message.pendingApproval?.options;
     if (opts && opts.length > 0) {
@@ -58,16 +102,14 @@ export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
         selectedOptionId,
         customVal,
         chosenLabel,
-        true
+        false
       );
     } finally {
       setIsResolvingHitl(false);
     }
   };
 
-  const markdownString = typeof message.content === 'string'
-    ? message.content
-    : formatAgentOutputToMarkdown(message.content);
+
 
   const renderAvatarIcon = () => {
     if (message.isUser) {
@@ -97,76 +139,112 @@ export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
     return <Icons.Bot size={16} style={{ color: 'var(--text-primary)' }} />;
   };
 
-  return (
-    <div style={{ ...styles.wrapper, ...(message.isUser ? styles.userWrapper : styles.aiWrapper) }}>
-      {/* Avatar */}
-      <div style={{ ...styles.avatar, ...(message.isUser ? styles.userAvatar : styles.aiAvatar) }}>
-        {renderAvatarIcon()}
+  if (message.isUser) {
+    return (
+      <div className="message-user-animate" style={styles.userRow}>
+        <div style={styles.userPill}>
+          <div style={styles.userContent}>{displayedContent}</div>
+          <span style={styles.userTime}>{message.timestamp}</span>
+        </div>
       </div>
+    );
+  }
 
-      <div style={{ ...styles.bubble, ...(message.isUser ? styles.userBubble : styles.aiBubble) }}>
-        {/* Meta Header */}
-        <div style={styles.metaRow}>
-          <span style={styles.senderName}>{message.sender}</span>
-          {message.isLightweight && (
-            <span style={styles.lightweightBadge}>
-              <Icons.Zap size={10} style={{ marginRight: 3 }} />
-              LIGHTWEIGHT FAST-PATH
-            </span>
-          )}
-          <span style={styles.timestamp}>{message.timestamp}</span>
-
-          {!message.isUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsExportingPdf(true);
-                  await generatePdfDeliverable(
-                    `${message.sender} Strategy Deliverable`,
-                    markdownString,
-                    `Strategic brief formulated by ${message.sender}`
-                  );
-                  setIsExportingPdf(false);
-                }}
-                style={styles.exportPdfBtn}
-                title="Download formatted PDF deliverable"
-                disabled={isExportingPdf}
-              >
-                <Icons.FileText size={12} />
-                <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
-              </button>
-
-              <button onClick={handleCopy} style={styles.copyBtn} title="Copy response">
-                {copied ? <Icons.Check size={13} style={{ color: '#ffffff' }} /> : <Icons.Copy size={13} />}
-              </button>
+  return (
+    <div className="gemini-turn-animate" style={styles.geminiTurnContainer}>
+      {/* Gemini Editorial Top Header */}
+      <div style={styles.geminiHeader}>
+        <div style={styles.geminiIdentity}>
+          <div style={styles.geminiAvatarPill}>
+            {renderAvatarIcon()}
+          </div>
+          <div style={styles.geminiMetaGroup}>
+            <div style={styles.geminiNameRow}>
+              <span style={styles.geminiSenderName}>{message.sender}</span>
+              <span style={styles.geminiSparkleBadge}>✦ FoundryOS</span>
+              {message.isLightweight && (
+                <span style={styles.lightweightBadge}>
+                  <Icons.Zap size={10} style={{ marginRight: 3 }} />
+                  FAST-PATH
+                </span>
+              )}
             </div>
-          )}
+            <span style={styles.geminiTimestamp}>{message.timestamp}</span>
+          </div>
         </div>
 
+        <div style={styles.geminiActionRow}>
+          <button
+            type="button"
+            onClick={async () => {
+              setIsExportingPdf(true);
+              await generatePdfDeliverable(
+                `${message.sender} Strategy Deliverable`,
+                markdownString,
+                `Strategic brief formulated by ${message.sender}`
+              );
+              setIsExportingPdf(false);
+            }}
+            className="interactive-hover-lift"
+            style={styles.geminiExportBtn}
+            title="Download formatted PDF deliverable"
+            disabled={isExportingPdf}
+          >
+            <Icons.FileText size={12} />
+            <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="interactive-hover-lift"
+            style={styles.geminiCopyBtn}
+            title="Copy response"
+          >
+            {copied ? <Icons.Check size={13} style={{ color: '#34d399' }} /> : <Icons.Copy size={13} />}
+          </button>
+        </div>
+      </div>
+
+      <div style={styles.geminiContentBody}>
         {/* Tool Call Disclosure Chips */}
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div style={styles.toolCallsDeck}>
             {message.toolCalls.map((tool, idx) => {
               const isExpanded = !!expandedTools[idx];
+              const isFailed = tool.success === false;
+              const payload = tool.output !== undefined
+                ? tool.output
+                : (tool.result !== undefined ? tool.result : null);
+              const isMcp = tool.toolName.startsWith('mcp:') || tool.toolName.includes('_mcp_');
+              const latencyText = tool.durationMs !== undefined ? `${tool.durationMs}ms` : 'Live';
+
               return (
-                <div key={idx} style={styles.toolCard}>
-                  <div onClick={() => toggleTool(idx)} style={styles.toolHeader}>
-                    <span style={styles.mcpBadge}>MCP</span>
+                <div key={idx} style={{ ...styles.toolCard, ...(isFailed ? { borderColor: 'rgba(239, 68, 68, 0.4)' } : {}) }}>
+                  <div onClick={() => toggleTool(idx)} className="interactive-hover-lift" style={styles.toolHeader}>
+                    <span style={{ ...styles.mcpBadge, ...(isMcp ? {} : { background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }) }}>
+                      {isMcp ? 'MCP' : 'REALTIME TOOL'}
+                    </span>
                     <span style={styles.toolName}><strong>{tool.toolName}</strong></span>
                     <span style={styles.toolStatus}>
-                      <span style={styles.toolStatusDot} />
-                      <span>Completed</span>
+                      <span style={{ ...styles.toolStatusDot, ...(isFailed ? { background: '#ef4444' } : {}) }} />
+                      <span>{isFailed ? 'Degraded' : latencyText}</span>
                     </span>
                     <span style={styles.toolToggle}>{isExpanded ? '▲ Hide' : '▼ Inspect'}</span>
                   </div>
 
                   {isExpanded && (
-                    <div style={styles.toolBody}>
+                    <div className="tool-accordion-animate" style={styles.toolBody}>
                       <div style={styles.toolSubheader}>Parameters</div>
-                      <pre style={styles.jsonPre}>{JSON.stringify(tool.input, null, 2)}</pre>
+                      <pre style={styles.jsonPre}>
+                        {JSON.stringify(tool.input ?? {}, null, 2)}
+                      </pre>
                       <div style={styles.toolSubheader}>Output Payload</div>
-                      <pre style={styles.jsonPre}>{JSON.stringify(tool.result, null, 2)}</pre>
+                      <pre style={styles.jsonPre}>
+                        {payload !== null && payload !== undefined
+                          ? (typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2))
+                          : JSON.stringify({ status: 'completed', message: 'Executed with positive status' }, null, 2)}
+                      </pre>
                     </div>
                   )}
                 </div>
@@ -175,9 +253,24 @@ export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
           </div>
         )}
 
-        {/* Body Content Formatted with Rich Markdown Renderer */}
+        {/* Body Content Formatted with Rich Markdown Renderer & Typewriter Animation */}
         <div style={styles.contentBody}>
-          <MarkdownRenderer content={markdownString} />
+          <MarkdownRenderer content={displayedContent} />
+          {isTyping && (
+            <div style={styles.typingControlRow}>
+              <span className="streaming-caret" />
+              <button
+                type="button"
+                onClick={handleSkipTyping}
+                className="interactive-hover-lift"
+                style={styles.skipTypingBtn}
+                title="Display full response immediately"
+              >
+                <Icons.Zap size={11} style={{ color: '#38bdf8' }} />
+                <span>Instant view</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Interactive Human-In-The-Loop Steering Card */}
@@ -269,7 +362,7 @@ export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
                       <div style={styles.customInputWrapper} onClick={(e) => e.stopPropagation()}>
                         <textarea
                           rows={2}
-                          placeholder="Type your strategic guidance, target angle, or requirements here..."
+                          placeholder=""
                           value={customAnswerText}
                           onChange={(e) => setCustomAnswerText(e.target.value)}
                           style={styles.customTextarea}
@@ -344,103 +437,182 @@ export const MessageItem: React.FC<{ message: Message }> = ({ message }) => {
           </div>
         )}
 
-        {/* Token & Credit Metric Footer */}
-        {message.tokenUsage && (message.tokenUsage.totalTokens !== undefined || message.tokenUsage.creditsDeducted !== undefined) && (
-          <div style={styles.tokenMetricsRow}>
-            {message.isLightweight ? (
-              <span style={{ ...styles.creditMetric, color: '#a1a1aa' }}>
-                <Icons.Zap size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
-                0 Credits (Lightweight Fast-Path)
-              </span>
-            ) : (
-              message.tokenUsage.creditsDeducted !== undefined && (
-                <span style={styles.creditMetric}>
-                  <Icons.Zap size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
-                  {message.tokenUsage.creditsDeducted} {message.tokenUsage.creditsDeducted === 1 ? 'Credit' : 'Credits'}
-                </span>
-              )
-            )}
-            {message.tokenUsage.totalTokens !== undefined && (
-              <span style={styles.tokenMetric}>
-                {message.tokenUsage.totalTokens.toLocaleString()} Tokens
-              </span>
-            )}
-            <span style={styles.ratioMetric}>(800 tok/cr)</span>
+        {/* Dynamic AI Suggested Next Steps */}
+        {!message.isUser && message.suggestions && message.suggestions.length > 0 && (
+          <div style={styles.suggestionsContainer}>
+            <div style={styles.suggestionsHeader}>
+              <Icons.Sparkles size={13} style={{ color: '#818cf8' }} />
+              <span>Suggested Next Actions:</span>
+            </div>
+            <div style={styles.suggestionsGrid}>
+              {message.suggestions.map((sug, sIdx) => (
+                <button
+                  key={sIdx}
+                  type="button"
+                  className="interactive-hover-lift"
+                  onClick={() => executeAgentRun(sug.prompt, sug.agentId)}
+                  style={styles.suggestionChip}
+                >
+                  <span style={styles.suggestionText}>{sug.label}</span>
+                  <Icons.ArrowRight size={12} style={styles.suggestionArrow} />
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
+      <div style={styles.geminiTurnDivider} />
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  wrapper: {
+  userRow: {
     display: 'flex',
-    gap: '14px',
-    marginBottom: '20px',
-    maxWidth: '920px',
-    margin: '0 auto 20px auto',
+    justifyContent: 'flex-end',
     width: '100%',
+    maxWidth: '920px',
+    margin: '0 auto 18px auto',
     padding: '0 20px',
-    animation: 'fadeSlideUp 0.3s var(--ease-apple)'
+    animation: 'fadeSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
   },
-  userWrapper: {
-    flexDirection: 'row-reverse'
+  userPill: {
+    background: 'rgba(255, 255, 255, 0.07)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '22px',
+    padding: '11px 20px',
+    maxWidth: '78%',
+    color: 'var(--text-primary)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '4px',
+    boxShadow: '0 2px 12px rgba(0, 0, 0, 0.2)'
   },
-  aiWrapper: {
-    flexDirection: 'row'
+  userContent: {
+    fontSize: '0.94rem',
+    lineHeight: '1.55',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    color: '#f4f4f5'
   },
-  avatar: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
+  userTime: {
+    fontSize: '0.68rem',
+    color: 'var(--text-muted)'
+  },
+  geminiTurnContainer: {
+    width: '100%',
+    maxWidth: '920px',
+    margin: '0 auto 28px auto',
+    padding: '0 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    animation: 'fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+  },
+  geminiHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '14px',
+    gap: '12px'
+  },
+  geminiIdentity: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  geminiAvatarPill: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    background: 'var(--glass-bg-surface)',
-    border: '1px solid var(--border-subtle)',
-    color: 'var(--text-primary)',
-    boxShadow: 'var(--glass-shadow-sm)'
+    boxShadow: '0 0 14px rgba(129, 140, 248, 0.16)'
   },
-  userAvatar: {
-    background: 'var(--glass-bg-surface)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border-subtle)'
+  geminiMetaGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px'
   },
-  aiAvatar: {
-    background: 'var(--glass-bg-card)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border-subtle)'
-  },
-  bubble: {
-    borderRadius: 'var(--radius-lg)',
-    padding: '18px 22px',
-    maxWidth: '82%',
-    backdropFilter: 'var(--glass-blur)',
-    WebkitBackdropFilter: 'var(--glass-blur)',
-    boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.12), var(--glass-shadow-sm)'
-  },
-  userBubble: {
-    background: 'rgba(255, 255, 255, 0.08)',
-    border: '1px solid rgba(255, 255, 255, 0.22)',
-    borderTopRightRadius: 'var(--radius-xs)'
-  },
-  aiBubble: {
-    background: 'rgba(18, 18, 22, 0.85)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderTopLeftRadius: 'var(--radius-xs)'
-  },
-  metaRow: {
+  geminiNameRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px'
+    gap: '8px'
   },
-  senderName: {
-    fontSize: '0.84rem',
+  geminiSenderName: {
+    fontSize: '0.92rem',
     fontWeight: 600,
-    color: '#ffffff'
+    color: '#ffffff',
+    letterSpacing: '-0.01em'
+  },
+  geminiSparkleBadge: {
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    color: '#818cf8',
+    background: 'rgba(129, 140, 248, 0.1)',
+    border: '1px solid rgba(129, 140, 248, 0.22)',
+    borderRadius: '12px',
+    padding: '1px 8px'
+  },
+  geminiTimestamp: {
+    fontSize: '0.70rem',
+    color: 'var(--text-muted)'
+  },
+  geminiActionRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  geminiExportBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '4px 10px',
+    background: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: 'var(--radius-xs)',
+    color: 'var(--text-secondary)',
+    fontSize: '0.72rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all var(--transition-fast)'
+  },
+  geminiCopyBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    padding: '5px',
+    borderRadius: 'var(--radius-xs)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  geminiContentBody: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  geminiContentCanvas: {
+    fontSize: '0.95rem',
+    lineHeight: '1.75',
+    color: 'var(--text-primary)',
+    wordBreak: 'break-word'
+  },
+  geminiTurnDivider: {
+    marginTop: '26px',
+    height: '1px',
+    width: '100%',
+    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent)'
+  },
+  contentBody: {
+    fontSize: '0.95rem',
+    lineHeight: '1.75',
+    color: 'var(--text-primary)',
+    wordBreak: 'break-word'
   },
   lightweightBadge: {
     display: 'inline-flex',
@@ -485,11 +657,25 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  contentBody: {
-    fontSize: '0.92rem',
-    lineHeight: '1.65',
-    color: 'var(--text-primary)',
-    wordBreak: 'break-word'
+  typingControlRow: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginTop: '6px'
+  },
+  skipTypingBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-pill)',
+    background: 'rgba(56, 189, 248, 0.1)',
+    border: '1px solid rgba(56, 189, 248, 0.25)',
+    color: '#38bdf8',
+    fontSize: '0.68rem',
+    fontFamily: 'var(--font-mono)',
+    cursor: 'pointer',
+    transition: 'all var(--transition-fast)'
   },
   paragraph: {
     marginBottom: '8px'
@@ -880,5 +1066,53 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     marginTop: '6px',
     lineHeight: 1.45
+  },
+  suggestionsContainer: {
+    marginTop: '12px',
+    padding: '10px 14px',
+    background: 'rgba(255, 255, 255, 0.02)',
+    border: '1px solid rgba(255, 255, 255, 0.07)',
+    borderRadius: 'var(--radius-md)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  suggestionsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '0.74rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    color: 'var(--text-muted)'
+  },
+  suggestionsGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px'
+  },
+  suggestionChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 12px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '16px',
+    color: 'var(--text-primary)',
+    fontSize: '0.78rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.18s ease',
+    textAlign: 'left'
+  },
+  suggestionText: {
+    lineHeight: 1.2
+  },
+  suggestionArrow: {
+    color: '#818cf8',
+    flexShrink: 0,
+    transition: 'transform 0.15s ease'
   }
 };
