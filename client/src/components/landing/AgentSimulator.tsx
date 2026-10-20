@@ -59,7 +59,7 @@ FoundryOS is the Autonomous Marketing Operating System for founders. Unlike disc
 
 ### Competitive Moats
 1. **Zero Prompt Re-Entry**: 7-layer context engine assembles ICP and rules automatically.
-2. **100% Local Inference**: Zero data leaks via native Ollama protocol.
+2. **Enterprise-Grade Privacy**: Zero data leaks with end-to-end encrypted inference.
 3. **Deterministic Governance**: High-stakes decisions stay strictly founder-approved.`
     }
   },
@@ -103,7 +103,7 @@ FoundryOS is the Autonomous Marketing Operating System for founders. Unlike disc
 - **Traditional Agencies**: 6-week turnaround time and $8,000/mo retainer overhead.
 
 ### Strategic Wedge
-Target technical B2B SaaS founders who demand structured schemas, reproducible execution, and private local models.`
+Target technical B2B SaaS founders who demand structured schemas, reproducible execution, and private AI infrastructure.`
     }
   },
   {
@@ -144,10 +144,10 @@ Target technical B2B SaaS founders who demand structured schemas, reproducible e
       content: `### LinkedIn Announcement Hook
 Most founders spend 15 hours a week re-explaining their company to generic AI chatbots.
 
-Today we are launching FoundryOS 2.0:
+Today we are launching FoundryOS:
 - A persistent 7-layer Company Brain that remembers everything.
 - Coordinated specialist AI employees that act in concert.
-- 100% private local execution on your machine via Ollama.`
+- Enterprise-grade private execution with zero data leaks.`
     }
   }
 ];

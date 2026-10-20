@@ -7,7 +7,7 @@ interface ExecutionBlobProps {
   activeEmployee?: Employee;
 }
 
-export const ExecutionBlob: React.FC<ExecutionBlobProps> = ({ employeeName }) => {
+export const ExecutionBlob: React.FC<ExecutionBlobProps> = () => {
   return (
     <div style={styles.container} className="execution-blob-animate">
       <div style={styles.blobWrapper}>
@@ -17,7 +17,7 @@ export const ExecutionBlob: React.FC<ExecutionBlobProps> = ({ employeeName }) =>
         </div>
       </div>
       <div style={styles.metaRow}>
-        <span style={styles.shimmerText}>{employeeName} is thinking...</span>
+        <span style={styles.shimmerText}>Brain is thinking...</span>
         <span style={styles.pulsePill}>Executing</span>
       </div>
     </div>

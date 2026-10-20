@@ -3,14 +3,12 @@ import { BrainLogo } from '../common/BrainLogo';
 import { Icons } from '../common/Icons';
 
 interface LandingNavProps {
-  onSignIn: () => void;
   onLaunch: () => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
 }
 
 export const LandingNav: React.FC<LandingNavProps> = ({
-  onSignIn,
   onLaunch,
   theme,
   toggleTheme
@@ -50,7 +48,7 @@ export const LandingNav: React.FC<LandingNavProps> = ({
         >
           <BrainLogo size={22} />
           <span className="capsule-brand-title">FoundryOS</span>
-          <span className="capsule-version-badge">2.0</span>
+
         </div>
 
         <div className="capsule-links">
@@ -88,10 +86,6 @@ export const LandingNav: React.FC<LandingNavProps> = ({
             aria-label="Toggle Theme"
           >
             {theme === 'dark' ? <Icons.Sun size={15} /> : <Icons.Moon size={15} />}
-          </button>
-
-          <button className="capsule-btn-ghost" onClick={onSignIn}>
-            Sign In
           </button>
 
           <button className="capsule-btn-launch" onClick={onLaunch}>

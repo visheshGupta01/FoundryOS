@@ -199,20 +199,6 @@ const INTEGRATIONS_CATALOG: IntegrationDef[] = [
     secondaryPlaceholder: '',
     secondaryHelp: 'Optional secret for live subscription change event listening.',
     docsUrl: 'https://dashboard.stripe.com/apikeys'
-  },
-  {
-    id: 'supabase',
-    name: 'Supabase',
-    category: 'Analytics',
-    description: 'Connect external PostgreSQL database, sync pgvector embeddings, and query customer analytics tables.',
-    badge: 'Postgres & Vector',
-    keyLabel: 'Service Role Key',
-    keyPlaceholder: '',
-    keyHelp: 'Supabase Project Settings > API > service_role secret key.',
-    secondaryLabel: 'Project URL',
-    secondaryPlaceholder: '',
-    secondaryHelp: 'Your Supabase project URL endpoint.',
-    docsUrl: 'https://supabase.com/dashboard'
   }
 ];
 
@@ -361,8 +347,6 @@ export const IntegrationsView: React.FC = () => {
         return <Icons.Analytics size={20} style={{ color: '#F54E00' }} />;
       case 'stripe':
         return <Icons.TrendingUp size={20} style={{ color: '#635BFF' }} />;
-      case 'supabase':
-        return <Icons.Brain size={20} style={{ color: '#3ECF8E' }} />;
       default:
         return <Icons.Link size={20} />;
     }

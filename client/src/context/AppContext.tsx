@@ -103,6 +103,9 @@ interface AppContextValue {
   activeProfileId: string;
   applyDemoProfile: (profileId: string) => Promise<boolean>;
   generatePdfDeliverable: (title: string, content: string, subtitle?: string) => Promise<string | null>;
+  isTourOpen: boolean;
+  setIsTourOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  startTour: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -146,6 +149,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   });
+  const [isTourOpen, setIsTourOpen] = useState<boolean>(false);
+
+  const startTour = useCallback(() => {
+    setActiveView('chat');
+    setIsTourOpen(true);
+  }, []);
   const [settingsSection, setSettingsSection] = useState<SettingsSectionType>('general');
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([]);
   const [tools, setTools] = useState<ToolDefinition[]>([]);
@@ -1058,7 +1067,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     demoProfiles,
     activeProfileId,
     applyDemoProfile,
-    generatePdfDeliverable
+    generatePdfDeliverable,
+    isTourOpen,
+    setIsTourOpen,
+    startTour
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

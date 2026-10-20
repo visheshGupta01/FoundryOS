@@ -120,18 +120,18 @@ export const AppleBentoGrid: React.FC = () => {
           </div>
         </BentoCard>
 
-        {/* Card 2: 100% Private Local Inference (Span 1) */}
+        {/* Card 2: Enterprise-Grade Privacy (Span 1) */}
         <BentoCard
           span={1}
           badge="Air-Gapped Neural Core"
           title="Zero Data Egress"
-          subtitle="Native Ollama execution directly on Apple Silicon or Nvidia cores. Your proprietary strategy never leaves your device."
+          subtitle="End-to-end encrypted inference with isolated tenant environments. Your proprietary strategy never leaves your secure workspace."
         >
           <div className="bento-chip-visual">
             <div className="neural-chip">
               <div className="neural-chip-core">
                 <Icons.Shield size={28} />
-                <span className="chip-brand">LOCAL NPU</span>
+                <span className="chip-brand">SECURE AI</span>
               </div>
               <div className="chip-pins-top" />
               <div className="chip-pins-bottom" />
@@ -147,8 +147,8 @@ export const AppleBentoGrid: React.FC = () => {
                 <strong>Q4_K_M Fast</strong>
               </div>
               <div className="stat-row">
-                <span>Weights Location</span>
-                <strong>~/.ollama/models</strong>
+                <span>Model Hosting</span>
+                <strong>Dedicated GPU Cluster</strong>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ const result = await mcpManager.callTool({
   server: "${mcpTools[activeMcp].name.toLowerCase().replace(/\s+/g, '-')}",
   name: "execute_analysis",
   parameters: {
-    target: "foundryos.local",
+    target: "foundryos.com",
     strictSanitization: true
   }
 });`}

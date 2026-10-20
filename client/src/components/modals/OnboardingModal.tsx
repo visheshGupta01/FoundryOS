@@ -111,151 +111,7 @@ const QUESTIONS: OnboardingQuestion[] = [
   }
 ];
 
-interface TourSlide {
-  badge: string;
-  badgeColor: string;
-  title: string;
-  description: string;
-  bullets: string[];
-  graphic: React.ReactNode;
-}
 
-const TOUR_SLIDES: TourSlide[] = [
-  {
-    badge: 'AUTONOMOUS MARKETING TEAM',
-    badgeColor: '#38bdf8',
-    title: '4 Coordinated AI Specialists',
-    description: 'FoundryOS does not give you a generic chatbot. You get a coordinated executive marketing department working in synergy.',
-    bullets: [
-      'Maya Lin (Market Research) — Macro trend analysis & ICP TAM expansion',
-      'Julian Vance (Competitor Intel) — Battlecards, pricing teardowns & weak spots',
-      'Sarah Chen (Chief Marketing Strategist) — Core positioning & GTM strategy',
-      'Marcus Brody (Funnel Architect) — High-converting landing copy & ad creative'
-    ],
-    graphic: (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
-        <div style={{ padding: '10px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#38bdf8' }}>Maya Lin</div>
-          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Market Research Analyst</div>
-        </div>
-        <div style={{ padding: '10px', background: 'rgba(248, 113, 113, 0.08)', border: '1px solid rgba(248, 113, 113, 0.25)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f87171' }}>Julian Vance</div>
-          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Competitor Intelligence</div>
-        </div>
-        <div style={{ padding: '10px', background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.25)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#a78bfa' }}>Sarah Chen</div>
-          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Chief Marketing Strategist</div>
-        </div>
-        <div style={{ padding: '10px', background: 'rgba(52, 211, 153, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#34d399' }}>Marcus Brody</div>
-          <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>Funnel & Growth Architect</div>
-        </div>
-      </div>
-    )
-  },
-  {
-    badge: 'VECTOR MEMORY RAG',
-    badgeColor: '#a78bfa',
-    title: 'Institutional Company Brain',
-    description: 'The positioning answers you provided are pre-computed into vector embeddings. Every specialist recalls your context automatically.',
-    bullets: [
-      'Zero repetitive prompting — agents know your target audience and core problem',
-      'PostgreSQL pgvector memory store with nomic-embed-text embeddings',
-      'Persistent institutional memory accessible in Settings at any time',
-      'Dynamic multi-document injection for contextual accuracy'
-    ],
-    graphic: (
-      <div style={{ padding: '16px', background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#a78bfa' }}>Brain Knowledge Graph</span>
-          <span style={{ fontSize: '0.7rem', color: '#34d399', fontFamily: 'monospace' }}>● Live Sync</span>
-        </div>
-        <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px' }}>
-          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #a78bfa 0%, #38bdf8 100%)' }} />
-        </div>
-        <div style={{ fontSize: '0.7rem', color: '#a1a1aa', lineHeight: 1.4 }}>
-          Embeddings calculated • Verified against ICP & competitors • Injected into prompts
-        </div>
-      </div>
-    )
-  },
-  {
-    badge: 'HUMAN-IN-THE-LOOP',
-    badgeColor: '#fbbf24',
-    title: 'Founder Strategic Steering',
-    description: 'You maintain absolute executive authority. High-stakes strategic deliverables pause for founder verification before committing.',
-    bullets: [
-      'Steering gates: Select recommended strategic options or enter custom direction',
-      'Approve, redirect, or reject autonomous plans with feedback',
-      'Full audit trail and governance log preserved in Approvals',
-      'No unintended campaign execution without your confirmation'
-    ],
-    graphic: (
-      <div style={{ padding: '14px', background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-          <Icons.Shield size={14} style={{ color: '#fbbf24' }} />
-          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#fbbf24' }}>Human-In-The-Loop Steering Gate</span>
-        </div>
-        <div style={{ fontSize: '0.72rem', color: '#ffffff', fontWeight: 600, marginBottom: '6px' }}>Select GTM Strategy:</div>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.66rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>PLG Self-Serve ✓</span>
-          <span style={{ fontSize: '0.66rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#a1a1aa' }}>Enterprise ABM</span>
-        </div>
-      </div>
-    )
-  },
-  {
-    badge: 'CONNECTED ECOSYSTEM',
-    badgeColor: '#34d399',
-    title: 'Zero-Secret MCP Tooling & Archive',
-    description: 'Connect your workspace to Slack, Google Drive, live DuckDuckGo web search, and instant PDF report generation.',
-    bullets: [
-      'Model Context Protocol (MCP) servers run directly alongside agents',
-      'Real-time competitor search and live URL reading via WebSearch plugin',
-      'One-click PDF deliverable export formatted for stakeholders',
-      'Zero credential leaks — private tokens stored in local isolated vault'
-    ],
-    graphic: (
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
-        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>Slack MCP</div>
-          <div style={{ fontSize: '0.64rem', color: '#34d399' }}>Live Alerts</div>
-        </div>
-        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>Google Drive</div>
-          <div style={{ fontSize: '0.64rem', color: '#38bdf8' }}>Cloud Sync</div>
-        </div>
-        <div style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ffffff' }}>PDF Vault</div>
-          <div style={{ fontSize: '0.64rem', color: '#a78bfa' }}>Deliverables</div>
-        </div>
-      </div>
-    )
-  },
-  {
-    badge: 'EXECUTION READY',
-    badgeColor: '#818cf8',
-    title: 'Intelligent Quotas & Fast-Path',
-    description: 'Balanced hybrid intelligence: 100% daily compute capacity with lightweight fast-path optimization for instant responses.',
-    bullets: [
-      'Fast-path routing skips heavy LLM steps for quick answers and assistance',
-      'Transparent token metrics and cache hit ratio on every turn',
-      'Full account, billing, model quota, and brain management in Settings',
-      'Allowance resets automatically daily at midnight UTC'
-    ],
-    graphic: (
-      <div style={{ padding: '16px', background: 'rgba(129, 140, 248, 0.08)', border: '1px solid rgba(129, 140, 248, 0.25)', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#818cf8' }}>Daily Execution Quota</span>
-          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#ffffff', fontWeight: 700 }}>100% Capacity</span>
-        </div>
-        <div style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>
-          Full Allocation • Local Ollama + Cloud Hybrid • Ready for Launch
-        </div>
-      </div>
-    )
-  }
-];
 
 export const OnboardingModal: React.FC = () => {
   const {
@@ -264,14 +120,13 @@ export const OnboardingModal: React.FC = () => {
     setBrainData,
     saveBrainData,
     setActiveView,
-    brainData
+    brainData,
+    setIsTourOpen
   } = useApp();
 
-  const [phase, setPhase] = useState<'questions' | 'tour'>('questions');
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [shakeField, setShakeField] = useState(false);
-  const [tourSlideIndex, setTourSlideIndex] = useState(0);
   const [isSavingBrain, setIsSavingBrain] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
@@ -287,17 +142,17 @@ export const OnboardingModal: React.FC = () => {
   }, [isOnboardingOpen, brainData]);
 
   useEffect(() => {
-    if (phase === 'questions' && inputRef.current) {
+    if (isOnboardingOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [currentQ, phase]);
+  }, [currentQ, isOnboardingOpen]);
 
   const currentQuestion = QUESTIONS[currentQ];
   const isMandatoryPhase = currentQ < 5;
   const isAtQuestionFive = currentQ === 4;
   const isOptionalPhase = currentQ >= 5;
 
-  const saveBrainAndProceed = async (targetPhase: 'tour' | 'optional') => {
+  const finishAndLaunchWorkspaceTour = async () => {
     setIsSavingBrain(true);
     const newBrain: BrainData = { ...brainData };
     QUESTIONS.forEach(question => {
@@ -315,12 +170,19 @@ export const OnboardingModal: React.FC = () => {
     }
     setIsSavingBrain(false);
 
-    if (targetPhase === 'tour') {
-      setPhase('tour');
-      setTourSlideIndex(0);
-    } else {
-      setCurrentQ(5);
+    try {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email') || '' : '';
+      if (email) {
+        localStorage.setItem(`foundryos_onboarded_${email}`, 'true');
+      }
+      localStorage.setItem('foundryos_onboarded_v1', 'true');
+      localStorage.removeItem('foundryos_needs_onboarding');
+    } catch {
+      // storage fallback
     }
+    setIsOnboardingOpen(false);
+    setActiveView('chat');
+    setIsTourOpen(true);
   };
 
   const handleNextQuestion = () => {
@@ -333,7 +195,7 @@ export const OnboardingModal: React.FC = () => {
     if (currentQ < QUESTIONS.length - 1) {
       setCurrentQ(prev => prev + 1);
     } else {
-      saveBrainAndProceed('tour');
+      finishAndLaunchWorkspaceTour();
     }
   };
 
@@ -341,35 +203,20 @@ export const OnboardingModal: React.FC = () => {
     if (currentQ > 0) setCurrentQ(prev => prev - 1);
   };
 
-  const finishTourAndEnter = () => {
+  const handleSkipAll = () => {
     try {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email') || '' : '';
+      if (email) {
+        localStorage.setItem(`foundryos_onboarded_${email}`, 'true');
+      }
       localStorage.setItem('foundryos_onboarded_v1', 'true');
+      localStorage.removeItem('foundryos_needs_onboarding');
     } catch {
       // storage fallback
     }
     setIsOnboardingOpen(false);
     setActiveView('chat');
-  };
-
-  const handleNextSlide = () => {
-    if (tourSlideIndex < TOUR_SLIDES.length - 1) {
-      setTourSlideIndex(prev => prev + 1);
-    } else {
-      finishTourAndEnter();
-    }
-  };
-
-  const handlePrevSlide = () => {
-    if (tourSlideIndex > 0) setTourSlideIndex(prev => prev - 1);
-  };
-
-  const handleSkipAll = () => {
-    try {
-      localStorage.setItem('foundryos_onboarded_v1', 'true');
-    } catch {
-      // storage fallback
-    }
-    setIsOnboardingOpen(false);
+    setIsTourOpen(true);
   };
 
   useEffect(() => {
@@ -380,35 +227,22 @@ export const OnboardingModal: React.FC = () => {
         handleSkipAll();
         return;
       }
-      if (phase === 'questions') {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          handleNextQuestion();
-        }
-      }
-      if (phase === 'tour') {
-        if (e.key === 'ArrowRight' || e.key === 'Enter') {
-          e.preventDefault();
-          handleNextSlide();
-        }
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          handlePrevSlide();
-        }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleNextQuestion();
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isOnboardingOpen, phase, currentQ, tourSlideIndex, answers]);
+  }, [isOnboardingOpen, currentQ, answers]);
 
   if (!isOnboardingOpen) return null;
 
-  if (phase === 'questions') {
-    const answeredCount = QUESTIONS.slice(0, 5).filter(q => answers[q.id]?.trim()).length;
-    const progressPercent = ((currentQ + 1) / QUESTIONS.length) * 100;
+  const answeredCount = QUESTIONS.slice(0, 5).filter(q => answers[q.id]?.trim()).length;
+  const progressPercent = ((currentQ + 1) / QUESTIONS.length) * 100;
 
-    return (
+  return (
       <div style={styles.backdrop}>
         <div style={styles.dialog} onClick={e => e.stopPropagation()}>
           <div style={styles.progressBar}>
@@ -504,12 +338,12 @@ export const OnboardingModal: React.FC = () => {
               {isOptionalPhase && (
                 <button
                   type="button"
-                  onClick={() => saveBrainAndProceed('tour')}
+                  onClick={finishAndLaunchWorkspaceTour}
                   disabled={isSavingBrain}
                   style={styles.saveBrainDirectBtn}
                 >
                   <Icons.Check size={14} style={{ color: '#34d399' }} />
-                  <span>{isSavingBrain ? 'Saving Brain...' : 'Save Brain & Start Tour →'}</span>
+                  <span>{isSavingBrain ? 'Saving Brain...' : 'Save & Launch Workspace Tour →'}</span>
                 </button>
               )}
             </div>
@@ -519,7 +353,7 @@ export const OnboardingModal: React.FC = () => {
                 <div style={styles.q5ActionGroup}>
                   <button
                     type="button"
-                    onClick={() => saveBrainAndProceed('tour')}
+                    onClick={finishAndLaunchWorkspaceTour}
                     disabled={isSavingBrain || (currentQuestion.required && !answers[currentQuestion.id]?.trim())}
                     style={styles.saveBrainPrimaryBtn}
                   >
@@ -547,7 +381,7 @@ export const OnboardingModal: React.FC = () => {
                   onClick={handleNextQuestion}
                   style={styles.nextBtn}
                 >
-                  <span>{currentQ === QUESTIONS.length - 1 ? 'Save & Start Tour' : 'Next Question →'}</span>
+                  <span>{currentQ === QUESTIONS.length - 1 ? 'Save & Start Workspace Tour →' : 'Next Question →'}</span>
                 </button>
               )}
             </div>
@@ -555,93 +389,6 @@ export const OnboardingModal: React.FC = () => {
         </div>
       </div>
     );
-  }
-
-  const slide = TOUR_SLIDES[tourSlideIndex];
-
-  return (
-    <div style={styles.backdrop}>
-      <div style={styles.tourDialog} onClick={e => e.stopPropagation()}>
-        <div style={styles.progressBar}>
-          <div
-            style={{
-              ...styles.progressFill,
-              width: `${((tourSlideIndex + 1) / TOUR_SLIDES.length) * 100}%`
-            }}
-          />
-        </div>
-
-        <div style={styles.tourHeader}>
-          <div style={styles.tourHeaderBadgeWrap}>
-            <span style={{ ...styles.tourBadge, color: slide.badgeColor, borderColor: `${slide.badgeColor}40`, background: `${slide.badgeColor}15` }}>
-              {slide.badge}
-            </span>
-            <span style={styles.tourSlideCount}>Slide {tourSlideIndex + 1} of {TOUR_SLIDES.length}</span>
-          </div>
-          <button
-            type="button"
-            onClick={finishTourAndEnter}
-            style={styles.tourCloseBtn}
-            title="Close tour and enter workspace"
-          >
-            Skip Tour ✕
-          </button>
-        </div>
-
-        <div style={styles.tourBody}>
-          <div style={styles.tourInfoSide}>
-            <h2 style={styles.tourSlideTitle}>{slide.title}</h2>
-            <p style={styles.tourSlideDesc}>{slide.description}</p>
-            <div style={styles.bulletList}>
-              {slide.bullets.map((b, i) => (
-                <div key={i} style={styles.bulletItem}>
-                  <Icons.Check size={14} style={{ color: slide.badgeColor, flexShrink: 0, marginTop: '2px' }} />
-                  <span style={styles.bulletText}>{b}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={styles.tourGraphicSide}>
-            {slide.graphic}
-          </div>
-        </div>
-
-        <div style={styles.tourFooter}>
-          <div style={styles.slideDots}>
-            {TOUR_SLIDES.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setTourSlideIndex(i)}
-                style={{
-                  ...styles.slideDot,
-                  width: i === tourSlideIndex ? '20px' : '6px',
-                  background: i === tourSlideIndex ? '#ffffff' : 'rgba(255,255,255,0.2)'
-                }}
-              />
-            ))}
-          </div>
-
-          <div style={styles.tourNavBtns}>
-            {tourSlideIndex > 0 && (
-              <button type="button" onClick={handlePrevSlide} style={styles.backBtn}>
-                ← Back
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={handleNextSlide}
-              style={styles.tourPrimaryBtn}
-            >
-              <span>{tourSlideIndex === TOUR_SLIDES.length - 1 ? '🚀 Launch FoundryOS Workspace' : 'Next Slide →'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 const styles: Record<string, React.CSSProperties> = {

@@ -111,7 +111,7 @@ export const ProductSection: React.FC = () => {
                 <span className="panel-badge">Autonomous Workflow</span>
                 <h4>Goal Ingestion to Executable Campaign</h4>
                 <p>
-                  FoundryOS takes your raw founder goal (e.g., "Prepare Product Hunt launch for v2.0") and decomposes it into parallel agent tickets. Market Intel conducts competitor analysis, Copy Architect writes the story, and Brand Sentinel enforces consistency.
+                  FoundryOS takes your raw founder goal (e.g., "Prepare Product Hunt launch for next release") and decomposes it into parallel agent tickets. Market Intel conducts competitor analysis, Copy Architect writes the story, and Brand Sentinel enforces consistency.
                 </p>
                 <div className="panel-points">
                   <div className="point-item">

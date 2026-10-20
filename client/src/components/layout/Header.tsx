@@ -14,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ onLogout }) => {
       <div style={styles.headerSpacer} />
 
       <div style={styles.actionGroup}>
+
         <button
           onClick={clearMessages}
           className="interactive-hover-lift"
@@ -57,6 +58,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '10px'
   },
+
   newChatBtn: {
     display: 'flex',
     alignItems: 'center',

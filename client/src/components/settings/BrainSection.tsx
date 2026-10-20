@@ -127,7 +127,7 @@ export const BrainSection: React.FC = () => {
           <div style={styles.formGroup}>
             <label style={styles.label}>Website / Domain</label>
             <input
-              type="url"
+              type="text"
               name="website"
               value={formData.website || ''}
               onChange={handleChange}

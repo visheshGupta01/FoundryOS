@@ -50,7 +50,7 @@ Active Initiative: Scale developer community via technical tear-downs and open-s
     tagline: 'Banned buzzwords, tonality parameters & editorial guidelines',
     tokenCount: 61,
     sampleContent: `Tone: Data-driven, founder-centric, concise, highly authoritative.
-Avoid Rules: Never invent fake metrics. Never use corporate jargon. Emphasize local privacy and autonomy.`,
+Avoid Rules: Never invent fake metrics. Never use corporate jargon. Emphasize privacy and autonomy.`,
     whyItMatters: 'Prevents brand dilution and eliminates hallucinated company traits across all channels.'
   },
   {
@@ -69,7 +69,7 @@ Pain Point: Spending 10+ hours a week context-switching and repeating instructio
     name: 'Product Scope & Features',
     tagline: 'Technical capabilities, architectural boundaries & feature sets',
     tokenCount: 66,
-    sampleContent: `Architecture: Local-first Ollama orchestration, 7-layer memory engine, Multi-MCP tool bus.
+    sampleContent: `Architecture: Cloud-native AI orchestration, 7-layer memory engine, Multi-MCP tool bus.
 Integrations: Slack, Google Drive, PDF synthesis, live web intelligence.`,
     whyItMatters: 'Keeps AI employees grounded in what your product actually does, preventing over-promising.'
   },
@@ -80,7 +80,7 @@ Integrations: Slack, Google Drive, PDF synthesis, live web intelligence.`,
     tagline: 'Founding mission, core value proposition & brand pillars',
     tokenCount: 41,
     sampleContent: `Company: FoundryOS | The Autonomous Marketing Operating System.
-Mission: Giving high-growth founders a coordinated AI marketing team with persistent memory and local privacy.`,
+Mission: Giving high-growth founders a coordinated AI marketing team with persistent memory and enterprise-grade privacy.`,
     whyItMatters: 'Forms the baseline grounding layer for every agent prompt and system directive.'
   }
 ];

@@ -3,28 +3,27 @@ import { Icons } from '../common/Icons';
 
 interface PricingSectionProps {
   onLaunch: () => void;
-  onSignIn: () => void;
 }
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ onLaunch, onSignIn }) => {
+export const PricingSection: React.FC<PricingSectionProps> = ({ onLaunch }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
   const tiers = [
     {
-      name: 'Community Local',
+      name: 'Starter',
       tag: '100% Free Forever',
-      badge: 'Open Source',
+      badge: 'Free Tier',
       price: '$0',
       period: 'forever',
-      desc: 'Run autonomous AI marketing directly on your local device with Ollama. Zero cost, zero data leaks.',
+      desc: 'Launch your autonomous AI marketing workspace instantly. Zero cost, full power.',
       features: [
-        '100% Private local Ollama inference',
+        'Enterprise-grade data encryption',
         'All 6 autonomous marketing roles',
-        '7-Layer persistent SQLite vector memory',
+        '7-Layer persistent vector memory',
         'Standard MCP tool integrations',
         'Deterministic Human-In-The-Loop approvals',
-        'Unlimited local runs & prompts',
-        'Community Discord & GitHub support'
+        'Unlimited runs & prompts',
+        'Community Discord & support'
       ],
       ctaText: 'Launch Free Workspace',
       popular: false,
@@ -38,7 +37,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onLaunch, onSign
       period: '/ month',
       desc: 'For high-velocity founders needing cloud memory sync, multi-model fallback, and scheduled reports.',
       features: [
-        'Everything in Community Local',
+        'Everything in Starter',
         'Hybrid cloud vector backup & sync',
         'Multi-model fallback (Claude 3.5 & GPT-4o)',
         'Automated weekly executive growth memos',
@@ -56,19 +55,19 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onLaunch, onSign
       badge: 'Dedicated',
       price: 'Custom',
       period: 'billed annually',
-      desc: 'Dedicated on-premise deployment for regulated companies requiring custom fine-tuned weights and team RBAC.',
+      desc: 'Dedicated deployment for regulated companies requiring custom fine-tuned models and team RBAC.',
       features: [
         'Everything in Founder Pro',
-        'Air-gapped VPC / on-premise installation',
+        'Private VPC / dedicated cloud installation',
         'Custom brand-voice LoRA fine-tuning',
         'Multi-seat role-based access control (RBAC)',
         'SOC 2 Type II audit logging & compliance',
         'Custom MCP server integrations & API webhooks',
         'Dedicated solutions engineer & 99.9% uptime SLA'
       ],
-      ctaText: 'Contact Enterprise',
+      ctaText: 'Launch Enterprise',
       popular: false,
-      onAction: onSignIn
+      onAction: onLaunch
     }
   ];
 
@@ -78,7 +77,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onLaunch, onSign
         <span className="section-tag">Founder Pricing</span>
         <h2 className="section-title">Transparent, Predictable Founder Economics</h2>
         <p className="section-desc">
-          Run 100% free locally on your own hardware, or upgrade to Pro for cloud memory sync and multi-model fallback. No surprise token bills.
+          Start free with the full platform, or upgrade to Pro for cloud memory sync and multi-model orchestration. No surprise token bills.
         </p>
       </div>
 

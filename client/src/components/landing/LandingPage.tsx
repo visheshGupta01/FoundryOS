@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { LandingNav } from './LandingNav';
@@ -9,28 +9,26 @@ import { AppleBentoGrid } from './AppleBentoGrid';
 import { ProductSection } from './ProductSection';
 import { AboutSection } from './AboutSection';
 import { PricingSection } from './PricingSection';
+import { LandingFooter } from './LandingFooter';
 import { Icons } from '../common/Icons';
-import { BrainLogo } from '../common/BrainLogo';
 import './LandingPage.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
 interface LandingPageProps {
-  onSignIn: () => void;
   onLaunchWorkspace: () => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
-  onSignIn,
   onLaunchWorkspace,
   theme,
   toggleTheme
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const [copiedCli, setCopiedCli] = useState(false);
+
 
   useEffect(() => {
     const scroller = containerRef.current;
@@ -327,11 +325,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     };
   }, []);
 
-  const handleCopyCli = () => {
-    navigator.clipboard.writeText('npm run build:all && npm start');
-    setCopiedCli(true);
-    setTimeout(() => setCopiedCli(false), 2000);
-  };
+
 
   return (
     <div className="landing-container" data-theme={theme} ref={containerRef}>
@@ -344,7 +338,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Navigation */}
       <LandingNav
-        onSignIn={onSignIn}
         onLaunch={onLaunchWorkspace}
         theme={theme}
         toggleTheme={toggleTheme}
@@ -359,7 +352,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="hero-content">
           <div className="hero-pill">
             <span className="hero-pulse-dot" />
-            <span>FOUNDRYOS 2.0 • 100% PRIVATE LOCAL INFERENCE VIA OLLAMA</span>
+            <span>FOUNDRYOS • AI-POWERED MARKETING OPERATING SYSTEM</span>
           </div>
 
           <h1 className="hero-headline">
@@ -367,12 +360,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </h1>
 
           <p className="hero-subtitle">
-            Coordinate specialized AI agents, persistent 7-layer company memory, and real-time MCP tool execution — without repetitive prompt re-entry or data leaks.
+            Coordinate specialized AI agents, persistent 7-layer company memory, and real-time MCP tool execution — without repetitive prompt re-entry or context loss.
           </p>
 
           <div className="hero-cta-group">
             <button className="hero-cta-primary" onClick={onLaunchWorkspace}>
-              <span>Launch Workspace Free</span>
+              <span>Get Started Free</span>
               <Icons.ChevronRight size={16} />
             </button>
 
@@ -386,24 +379,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               }}
             >
               <Icons.Sparkles size={16} />
-              <span>Explore Live Simulation</span>
+              <span>See How It Works</span>
             </button>
-          </div>
-
-          {/* Quick CLI Run Box */}
-          <div className="hero-cli-box" onClick={handleCopyCli} title="Click to copy start command">
-            <span>$ npm run build:all &amp;&amp; npm start</span>
-            <span className="hero-cli-copy">
-              {copiedCli ? <Icons.Check size={13} style={{ color: 'var(--text-primary)' }} /> : <Icons.Copy size={13} />}
-              <span>{copiedCli ? 'Copied' : 'Copy'}</span>
-            </span>
           </div>
 
           {/* Hero Metrics */}
           <div className="hero-metrics">
             <div className="hero-metric-card">
-              <div className="hero-metric-value">100% Private</div>
-              <div className="hero-metric-label">Local Ollama runtime with zero cloud data leaks.</div>
+              <div className="hero-metric-value">Enterprise-Grade Privacy</div>
+              <div className="hero-metric-label">SOC 2 compliant infrastructure with zero third-party data sharing.</div>
             </div>
 
             <div className="hero-metric-card">
@@ -477,57 +461,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Pricing Section */}
       <PricingSection
         onLaunch={onLaunchWorkspace}
-        onSignIn={onSignIn}
       />
 
-      {/* Final Call To Action Banner */}
-      <section className="landing-cta-section">
-        <div className="landing-cta-banner">
-          <div className="cta-banner-glow" />
-          <h2 className="cta-banner-title">Deploy Your Coordinated AI Marketing Team Today</h2>
-          <p className="cta-banner-desc">
-            Run 100% locally on your machine with Ollama or deploy in your private cloud. Zero API key lock-in, zero privacy compromises.
-          </p>
-
-          <div className="cta-buttons-wrap">
-            <button className="cta-btn-primary" onClick={onLaunchWorkspace}>
-              <span>Get Started with FoundryOS</span>
-              <Icons.ChevronRight size={16} />
-            </button>
-            <button className="cta-btn-secondary" onClick={onSignIn}>
-              <span>Sign In to Account</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Modern Monochrome Footer */}
-      <footer className="landing-footer">
-        <div className="landing-footer-inner">
-          <div className="footer-left">
-            <BrainLogo size={20} />
-            <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>FoundryOS</span>
-            <div className="footer-status-badge">
-              <span className="footer-status-dot" />
-              <span>Ollama Local Runtime Connected</span>
-            </div>
-          </div>
-
-          <div className="footer-links">
-            <a href="#product" className="footer-link">Product</a>
-            <a href="#simulator" className="footer-link">How It Works</a>
-            <a href="#about" className="footer-link">About</a>
-            <a href="#pricing" className="footer-link">Pricing</a>
-            <button
-              onClick={onSignIn}
-              className="footer-link"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              Sign In
-            </button>
-          </div>
-        </div>
-      </footer>
+      {/* Modern High-End Cyberpunk/Luxury Footer */}
+      <LandingFooter onLaunch={onLaunchWorkspace} />
     </div>
   );
 };

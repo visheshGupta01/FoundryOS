@@ -13,6 +13,7 @@ import { ApprovalsView } from './components/approvals/ApprovalsView';
 import { ArtifactModal } from './components/modals/ArtifactModal';
 import { OnboardingModal } from './components/modals/OnboardingModal';
 import { SettingsView } from './components/settings/SettingsView';
+import { SpotlightTour } from './components/tour/SpotlightTour';
 
 import { LoginPage } from './components/auth/LoginPage';
 import { LandingPage } from './components/landing/LandingPage';
@@ -21,9 +22,17 @@ import { isAuthenticated, logout } from './services/auth.service';
 type AppScreen = 'landing' | 'auth' | 'dashboard';
 
 const AppContent: React.FC = () => {
-  const { activeView, setActiveView, theme, toggleTheme } = useApp();
+  const { activeView, setActiveView, theme, toggleTheme, setIsOnboardingOpen, brainData, isTourOpen, setIsTourOpen } = useApp();
   const [, setIsAuth] = React.useState(isAuthenticated);
-  const [authMode, setAuthMode] = React.useState<'signin' | 'signup'>('signin');
+  const [authMode, setAuthMode] = React.useState<'signin' | 'signup'>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#login' || hash === '#signin') {
+        return 'signin';
+      }
+    }
+    return 'signup';
+  });
 
   const [currentScreen, setCurrentScreen] = React.useState<AppScreen>(() => {
     if (typeof window !== 'undefined') {
@@ -31,7 +40,10 @@ const AppContent: React.FC = () => {
       if ((hash === '#app' || hash === '#dashboard') && isAuthenticated()) {
         return 'dashboard';
       }
-      if (hash === '#login' || hash === '#auth' || hash === '#signup') {
+      if (hash === '#signup') {
+        return 'auth';
+      }
+      if (hash === '#login' || hash === '#auth' || hash === '#signin') {
         return 'auth';
       }
     }
@@ -65,7 +77,7 @@ const AppContent: React.FC = () => {
       } else if (hash === 'signup') {
         setAuthMode('signup');
         setCurrentScreen('auth');
-      } else if (hash === 'login' || hash === 'auth') {
+      } else if (hash === 'login' || hash === 'auth' || hash === 'signin') {
         setAuthMode('signin');
         setCurrentScreen('auth');
       } else {
@@ -97,6 +109,7 @@ const AppContent: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsAuth(false);
+    setAuthMode('signin');
     try {
       window.history.replaceState(null, '', window.location.pathname);
     } catch {
@@ -105,21 +118,25 @@ const AppContent: React.FC = () => {
     setCurrentScreen('landing');
   };
 
-  const handleSignInFromLanding = () => {
-    if (isAuthenticated()) {
-      window.location.hash = '#app';
-      setCurrentScreen('dashboard');
-    } else {
-      setAuthMode('signin');
-      window.location.hash = '#login';
-      setCurrentScreen('auth');
+  React.useEffect(() => {
+    if (currentScreen === 'dashboard' && isAuthenticated()) {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email') || '' : '';
+      const onboardedKey = email ? `foundryos_onboarded_${email}` : 'foundryos_onboarded_v1';
+      const isDone = typeof window !== 'undefined' ? localStorage.getItem(onboardedKey) === 'true' : false;
+      const needsOnboarding = typeof window !== 'undefined' ? localStorage.getItem('foundryos_needs_onboarding') === 'true' : false;
+
+      if (needsOnboarding || !isDone || !brainData?.name) {
+        setIsOnboardingOpen(true);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('foundryos_needs_onboarding');
+        }
+      }
     }
-  };
+  }, [currentScreen, brainData?.name]);
 
   if (currentScreen === 'landing') {
     return (
       <LandingPage
-        onSignIn={handleSignInFromLanding}
         onLaunchWorkspace={handleLaunchFromLanding}
         theme={theme}
         toggleTheme={toggleTheme}
@@ -130,13 +147,18 @@ const AppContent: React.FC = () => {
   if (currentScreen === 'auth') {
     return (
       <LoginPage
-        key={authMode}
         initialMode={authMode}
         onLoginSuccess={() => {
           setIsAuth(true);
           window.location.hash = '#app';
           setCurrentScreen('dashboard');
           setActiveView('chat');
+          const email = typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email') || '' : '';
+          const onboardedKey = email ? `foundryos_onboarded_${email}` : 'foundryos_onboarded_v1';
+          const isDone = typeof window !== 'undefined' ? localStorage.getItem(onboardedKey) === 'true' : false;
+          if (!isDone || (typeof window !== 'undefined' && localStorage.getItem('foundryos_needs_onboarding') === 'true')) {
+            setIsOnboardingOpen(true);
+          }
         }}
         onBackToLanding={() => {
           try {
@@ -175,6 +197,19 @@ const AppContent: React.FC = () => {
     }
   };
 
+
+  const handleTourComplete = () => {
+    try {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email') || '' : '';
+      if (email) {
+        localStorage.setItem(`foundryos_tour_completed_${email}`, 'true');
+      }
+      localStorage.setItem('foundryos_tour_completed_v1', 'true');
+    } catch {
+      // storage fallback
+    }
+  };
+
   return (
     <div style={styles.appLayout}>
       <Sidebar />
@@ -187,6 +222,11 @@ const AppContent: React.FC = () => {
 
       <ArtifactModal />
       <OnboardingModal />
+      <SpotlightTour
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onComplete={handleTourComplete}
+      />
     </div>
   );
 };

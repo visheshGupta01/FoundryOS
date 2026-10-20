@@ -6,11 +6,13 @@ import { ChatInput } from './ChatInput';
 import { ExecutionBlob } from './ExecutionBlob';
 
 export const WorkspaceView: React.FC = () => {
-  const { messages, isExecuting, selectedAgentId, employees, brainData } = useApp();
+  const { messages, isExecuting, selectedAgentId, employees } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const hasMessages = messages.length > 0;
-  const founderName = brainData?.name || 'Founder';
+  const userName = (typeof window !== 'undefined' ? localStorage.getItem('foundry_user_name') : '') ||
+    (typeof window !== 'undefined' ? localStorage.getItem('foundry_user_email')?.split('@')[0] : '') ||
+    'Founder';
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -36,15 +38,15 @@ export const WorkspaceView: React.FC = () => {
 
           <div style={styles.landingContent}>
             <h1 style={styles.heroTitle}>
-              Welcome{founderName !== 'Founder' ? `, ${founderName}` : ' Founder'},
+              Welcome{userName !== 'Founder' ? `, ${userName}` : ' Founder'},
             </h1>
             <p style={styles.heroSubtext}>What can your autonomous team execute for you today?</p>
 
-            <div style={styles.inputDock}>
+            <div style={styles.inputDock} data-tour="chat-input-dock">
               <ChatInput />
             </div>
 
-            <div style={styles.cardsArea}>
+            <div style={styles.cardsArea} data-tour="quick-launch">
               <QuickLaunchCards layout="landing" />
             </div>
           </div>

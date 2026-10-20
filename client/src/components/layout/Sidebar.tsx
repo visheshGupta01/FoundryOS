@@ -66,7 +66,8 @@ export const Sidebar: React.FC = () => {
     currentSessionId,
     loadChatSession,
     deleteChatSession,
-    clearMessages
+    clearMessages,
+    startTour
   } = useApp();
 
   const navItems: Array<{ id: ViewType; label: string; icon: React.ReactNode; badge?: string; badgeColor?: string }> = [
@@ -103,7 +104,7 @@ export const Sidebar: React.FC = () => {
           return (
             <button
               key={item.id}
-              data-tour={item.id === 'brain' ? 'brain-btn' : item.id === 'employees' ? 'employees-btn' : undefined}
+              data-tour={`nav-${item.id}`}
               onClick={() => setActiveView(item.id)}
               style={{
                 ...styles.navBtn,
@@ -169,6 +170,7 @@ export const Sidebar: React.FC = () => {
 
       <div style={styles.footer}>
         <div
+          data-tour="brain-widget"
           onClick={() => {
             setSettingsSection('brain');
             setActiveView('settings');
@@ -227,6 +229,15 @@ export const Sidebar: React.FC = () => {
         </div>
 
         <div style={styles.controlRow}>
+          <button
+            onClick={startTour}
+            style={styles.controlBtn}
+            title="Start Interactive Workspace Tour"
+          >
+            <Icons.Target size={14} />
+            <span style={{ fontSize: '0.78rem' }}>Tour</span>
+          </button>
+
           <button
             onClick={toggleTheme}
             style={styles.controlBtn}
